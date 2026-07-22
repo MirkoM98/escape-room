@@ -1,0 +1,85 @@
+{
+  "overrides": {},
+  "custom": [
+    {
+      "id": "custom_6eac4d71",
+      "name": "No code - improvise",
+      "description": "Your saved room",
+      "room": {
+        "items": [
+          {
+            "id": "door",
+            "name": "door",
+            "isVisible": true,
+            "description": "The main exit door. Contains a 4 digit code.",
+            "codeRequired": "4321",
+            "isExit": true,
+            "x": 2,
+            "y": 0,
+            "isLocked": true
+          },
+          {
+            "id": "book",
+            "name": "Book",
+            "isVisible": true,
+            "description": "An old book.",
+            "clue": "Code: 1234",
+            "x": 0,
+            "y": 0
+          }
+        ],
+        "inventory": []
+      }
+    },
+    {
+      "id": "custom_27129dcd",
+      "name": "room 29",
+      "description": "Your saved room",
+      "room": {
+        "items": [
+          {
+            "id": "door",
+            "name": "door",
+            "isVisible": true,
+            "description": "The main exit door. It has a keyhole.",
+            "keyRequired": "brass_key",
+            "isExit": true,
+            "x": 2,
+            "y": 0,
+            "isLocked": true
+          },
+          {
+            "id": "box_1",
+            "name": "box 1",
+            "isVisible": true,
+            "description": "A metal box with a 4-digit keypad.",
+            "codeRequired": "4829",
+            "holdsItem": "brass_key",
+            "x": 1,
+            "y": 2,
+            "isLocked": true
+          },
+          {
+            "id": "table_1",
+            "name": "table 1",
+            "isVisible": true,
+            "description": "A dusty wooden table.",
+            "clue": "Taped underneath is a sticky note that reads: 'Box Code: 4829'",
+            "x": 3,
+            "y": 2
+          },
+          {
+            "id": "box_3",
+            "name": "box 3",
+            "isVisible": true,
+            "keyRequired": "heart_key",
+            "x": 2,
+            "y": 1,
+            "isLocked": true
+          }
+        ],
+        "inventory": []
+      }
+    }
+  ]
+}
