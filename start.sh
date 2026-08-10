@@ -52,7 +52,9 @@ cleanup() {
 trap cleanup INT TERM EXIT
 
 echo "🚪 Backend  → http://localhost:8000  (API)"
-( cd backend && exec python3 -m uvicorn main:app --port 8000 ) &
+# --reload picks up backend code edits without a manual restart. It spawns a
+# reloader parent + worker child; the cleanup() above reaps the child via pkill -P.
+( cd backend && exec python3 -m uvicorn main:app --port 8000 --reload ) &
 BACKEND=$!
 
 echo "🖥️  Frontend → http://localhost:5173  (open this one)"

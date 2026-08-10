@@ -63,6 +63,19 @@ def _extract_thinking(text: str) -> str:
     return (text or "").strip()
 
 
+def _json_pretty(obj) -> str:
+    """Best-effort pretty JSON for the 'exact LLM input/output' debug panel.
+    Anthropic SDK block objects are converted via model_dump(); anything else
+    falls back to str() so this never raises."""
+    def _default(o):
+        dump = getattr(o, "model_dump", None)
+        return dump() if callable(dump) else str(o)
+    try:
+        return json.dumps(obj, indent=2, ensure_ascii=False, default=_default)
+    except Exception:  # noqa: BLE001
+        return str(obj)
+
+
 # ===========================================================================
 # Dispatcher — pick the provider, with auto-fallback from API to CLI.
 # ===========================================================================
@@ -203,6 +216,16 @@ def _run_api(
             elif block.type == "tool_use":
                 tool_uses.append(block)
 
+        # The EXACT technical input/output for this turn (for the ⓘ debug panel).
+        llm_input = _json_pretty({
+            "model": current_model,
+            "system": SYSTEM_PROMPT,
+            "tools": TOOLS,
+            "tool_choice": {"type": "auto", "disable_parallel_tool_use": True},
+            "messages": messages,
+        })
+        llm_output = _json_pretty({"stop_reason": response.stop_reason, "content": response.content})
+
         # No tool this turn -> the agent gave up / believes it cannot escape.
         if response.stop_reason != "tool_use" or not tool_uses:
             yield {
@@ -233,6 +256,8 @@ def _run_api(
                 "move_limit": move_limit,
                 "tool": tool_use.name,
                 "input": raw_input,
+                "llm_input": llm_input,
+                "llm_output": llm_output,
             }
             result_text, update = game.execute_tool(state, tool_use.name, raw_input)
             last_result = result_text
@@ -376,7 +401,13 @@ def _cli_decide(prompt: str, model: str):
     alias = _cli_model_arg(model)
     if alias:
         cmd += ["--model", alias]
-    proc = subprocess.run(cmd, input=prompt, capture_output=True, text=True, timeout=180)
+    # CRITICAL: the CLI must authenticate with your claude.ai / Claude Code LOGIN,
+    # not an API key. If ANTHROPIC_API_KEY (even an invalid/expired one) is in the
+    # environment, the CLI prefers it and DISABLES the claude.ai login — which
+    # makes the `cli` provider hang/fail. Strip it (and any auth token) so the CLI
+    # always falls back to your logged-in session.
+    env = {k: v for k, v in os.environ.items() if k not in ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN")}
+    proc = subprocess.run(cmd, input=prompt, capture_output=True, text=True, timeout=180, env=env)
     if proc.returncode != 0:
         raise RuntimeError(proc.stderr.strip() or f"`claude` exited with code {proc.returncode}")
     try:
@@ -463,6 +494,9 @@ def _run_cli(state: game.GameState, model: str = "claude-sonnet-5", move_limit: 
             "move_limit": move_limit,
             "tool": tool,
             "input": tool_input,
+            # exact technical input/output for the ⓘ debug panel
+            "llm_input": prompt,
+            "llm_output": raw,
         }
         result_text, update = game.execute_tool(state, tool, tool_input)
         yield {

@@ -491,7 +491,7 @@ export default function EscapeRoom() {
         break;
 
       case "action": {
-        setSteps((prev) => mergeIter(prev, event.iteration, { action: { tool: event.tool, input: event.input, move: event.move } }));
+        setSteps((prev) => mergeIter(prev, event.iteration, { action: { tool: event.tool, input: event.input, move: event.move }, llmInput: event.llm_input, llmOutput: event.llm_output }));
         const tool = event.tool;
         if (tool === "look_around") {
           setAgentTool("look");
@@ -643,7 +643,7 @@ export default function EscapeRoom() {
             🔐 Escape Room — <span className="text-emerald-400">Agentic Loop</span>
           </h1>
           <p className="text-xs text-slate-500">
-            An autonomous Claude agent walks the room and reasons its way out. Build it on the left, watch it on the right.
+            An autonomous Claude agent is locked into a room with objects, clues, and a single exit. Watch him try to escape your custom rooms.
           </p>
         </div>
         <span className={`px-3 py-1 rounded-full text-xs border ${statusStyle}`}>{status}</span>
@@ -1061,6 +1061,7 @@ function ItemForm({ item, onField, disabled }) {
 }
 
 function StepCard({ step }) {
+  const [showDebug, setShowDebug] = useState(false);
   if (step.done) {
     const escaped = step.done === "escaped";
     const oom = step.done === "out_of_moves";
@@ -1085,6 +1086,7 @@ function StepCard({ step }) {
     return <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-2 text-xs text-amber-300">⏳ {step.note}</div>;
   }
   const a = step.action;
+  const hasDebug = !!(step.llmInput || step.llmOutput);
   return (
     <div className="rounded-lg border border-slate-800 bg-slate-950/60 p-3">
       <div className="text-[11px] uppercase tracking-wide text-slate-500 mb-1">Iteration {step.n}</div>
@@ -1093,11 +1095,34 @@ function StepCard({ step }) {
         : <p className="italic text-slate-600 text-xs mb-2">(no thinking emitted this turn)</p>}
       {a && (
         <div className="mt-1 border-l-2 border-slate-700 pl-3">
-          <div className="text-sm">
+          <div className="text-sm flex items-center gap-1.5">
             <span className="text-amber-400">▸ {a.tool}</span>
             <span className="text-amber-200/70">({JSON.stringify(a.input || {})})</span>
             {a.move ? <span className="text-slate-600 text-xs"> · move {a.move}</span> : null}
+            {hasDebug && (
+              <button onClick={() => setShowDebug((v) => !v)}
+                title="Show the exact LLM input & output for this turn"
+                className={`ml-1 w-4 h-4 inline-flex items-center justify-center rounded-full border text-[10px] leading-none ${showDebug ? "border-sky-400 text-sky-300 bg-sky-500/10" : "border-slate-600 text-slate-400 hover:border-sky-400 hover:text-sky-300"}`}>
+                i
+              </button>
+            )}
           </div>
+          {hasDebug && showDebug && (
+            <div className="mt-2 space-y-2 text-[10px]">
+              {step.llmInput && (
+                <div>
+                  <div className="text-slate-500 uppercase tracking-wide mb-0.5">LLM input (exact request)</div>
+                  <pre className="max-h-52 overflow-auto bg-black/50 border border-slate-800 rounded p-2 text-sky-200/80 whitespace-pre-wrap">{step.llmInput}</pre>
+                </div>
+              )}
+              {step.llmOutput && (
+                <div>
+                  <div className="text-slate-500 uppercase tracking-wide mb-0.5">LLM output (raw response)</div>
+                  <pre className="max-h-52 overflow-auto bg-black/50 border border-slate-800 rounded p-2 text-emerald-200/80 whitespace-pre-wrap">{step.llmOutput}</pre>
+                </div>
+              )}
+            </div>
+          )}
           {step.result != null && (
             <div className={`text-sm mt-1 whitespace-pre-wrap ${resultOk(step.result) ? "text-emerald-300" : "text-red-300"}`}>
               ↳ {step.result}

@@ -108,6 +108,44 @@ OUTPUT  (to LLM): "SUCCESS! You have opened the door and escaped the room!"
 ------- loop terminates: escape() succeeded -> state.escaped = True
 
 
+Technical details — the EXACT input/output of the LLM each turn
+(In the UI: click the small "ⓘ" next to any action in the Execution Trace to see
+these verbatim for that move. Hidden by default.)
+
+API provider (Anthropic SDK) — one client.messages.create() call per turn:
+  REQUEST (the exact input):
+    model            e.g. "claude-sonnet-5"
+    system           the full SYSTEM_PROMPT (from skill.py)
+    tools            the 4 tool JSON schemas (look_around, investigate_item,
+                     use_item_on_target, escape) — each with a REQUIRED "thinking" field
+    tool_choice      {"type": "auto", "disable_parallel_tool_use": true}   (exactly one tool/turn)
+    messages         the WHOLE conversation so far, growing every turn:
+                       [ {role: user,      content: <kickoff text>},
+                         {role: assistant, content: [<thinking text>, <tool_use block>]},
+                         {role: user,      content: [<tool_result: result_text + grounding footer>]},
+                         ... repeats ... ]
+  RESPONSE (the exact output):
+    stop_reason      "tool_use" (kept looping) | "end_turn" (agent stopped/gave up)
+    content          [ {type:"text", text:"<reasoning>"},
+                       {type:"tool_use", name:"<tool>", input:{thinking, ...args}} ]
+  The engine reads the tool_use, runs it on GameState, and appends the result as the
+  next user tool_result — that is the state that accumulates the agent's memory.
+
+CLI provider (`claude -p`, uses your Claude Code login, no API key) — one process per turn:
+  REQUEST (the exact input, a single text prompt on stdin):
+    SYSTEM_PROMPT + tools spec + "reply with ONLY this JSON" rule
+    + "WHAT YOU HAVE DONE SO FAR:" <running transcript of THOUGHT/ACTION/RESULT>
+    + "CURRENT SITUATION:" <last result + grounding footer>
+    + "This is move N of LIMIT. Return ONLY the JSON object."
+    invoked as: claude -p --output-format json --allowed-tools "" [--model sonnet|haiku|opus]
+    IMPORTANT: ANTHROPIC_API_KEY is stripped from the subprocess env so the CLI uses
+    your claude.ai LOGIN (if a key is present the CLI prefers it and disables the login).
+  RESPONSE (the exact output):
+    a JSON envelope; its "result" field is the model's answer:
+      {"thinking": "<reasoning>", "tool": "<tool name>", "input": {<args>}}
+  The engine parses that JSON, runs the tool, and appends it to the transcript for next turn.
+
+
 Expected output (roughly)
 
 Outcome: ESCAPED in 5 moves (of 8 allowed).
