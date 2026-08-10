@@ -132,15 +132,15 @@ PRESETS = [
         "id": "summit_code",
         "name": "Summit Code — the height of the world",
         "description": (
-            "The door code is the official height of Mount Everest in metres as announced "
-            "by the Nepal-China joint survey in 2020 (8849). An old atlas page shows a rough "
-            "early estimate of 8,000 m as a decoy. One wrong entry jams the lock. A script "
-            "that tries 8000 is done. Only an agent with up-to-date geographic knowledge escapes."
+            "The door code is the long-accepted height of Mount Everest (8848 m). An old "
+            "atlas page shows a rough estimate of 8,000 m as a decoy. Three wrong entries "
+            "jam the lock for good. A script that tries 8000 fails; only an agent with "
+            "geographic knowledge escapes."
         ),
         "room": {
             "items": [
-                {"id": "door", "name": "door", "description": "A reinforced door with a 4-digit keypad. A metal sign warns: ONLY ONE ATTEMPT PERMITTED. A wrong code jams the mechanism permanently.", "isLocked": True, "codeRequired": "8849", "maxAttempts": 1, "isExit": True, "x": 2, "y": 0},
-                {"id": "journal", "name": "journal", "description": "A mountaineer's journal left on the floor.", "clue": "To escape, enter the official height of Mount Everest above sea level in metres, as announced by Nepal and China in their 2020 joint survey.", "x": 0, "y": 0},
+                {"id": "door", "name": "door", "description": "A reinforced door with a 4-digit keypad. A metal sign warns: THREE wrong entries will jam this mechanism permanently.", "isLocked": True, "codeRequired": "8848", "maxAttempts": 3, "isExit": True, "x": 2, "y": 0},
+                {"id": "journal", "name": "journal", "description": "A mountaineer's journal left on the floor.", "clue": "To escape, enter the official height of Mount Everest above sea level in metres, as announced by Nepal and China in their 2020 joint survey. max 4 digits", "x": 0, "y": 0},
                 {"id": "atlas", "name": "atlas", "description": "A torn page from an old geographic atlas.", "clue": "Everest elevation — early rough estimate: 8,000 m (subject to resurvey). This figure predates modern satellite measurement.", "x": 4, "y": 2},
                 {"id": "chair_1", "name": "chair 1", "description": "A plain chair. Nothing under it.", "x": 2, "y": 2},
             ],
