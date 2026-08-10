@@ -1,0 +1,129 @@
+Escape Room — autonomous agent (agentic loop demo)
+
+Escape Room is a demonstration of a genuine agentic loop: an autonomous Claude
+agent is "trapped" in a virtual room and must escape on its own. There is NO
+hard-coded solver — the model decides every move. It looks around, investigates
+objects, connects clues (clue -> code -> key -> door), and calls one tool at a
+time until it opens the exit and escapes (or runs out of moves, or declares the
+room unsolvable). A Python (FastAPI) backend runs the loop; a React dashboard
+streams the agent's thinking / actions / results.
+
+
+Two ways to reach Claude (pick with `provider`)
+  api   the Anthropic SDK — needs an API key (ANTHROPIC_API_KEY), pay-as-you-go, real native tool_use.
+  cli   the local `claude` CLI in headless mode — uses your existing Claude Code login, NO API key.
+        (the model returns a JSON decision each turn; the loop is otherwise identical.)
+  auto  (default) use the API if a key works; if there is no key or it is rejected (401), fall back to the CLI.
+
+
+Data sources (what the LLM is given):
+
+system prompt + tool schemas ...... backend/skill.py  (WHO the agent is + the 4 tools it may call)
+the room / world engine ........... backend/game.py   (GameState: deterministic state machine, resolves each tool)
+grounding footer .................. appended to every tool result: "[You can see: ... You are carrying: ...]"
+conversation history .............. the messages[] array (api) or the running transcript (cli) grows every turn
+
+
+How it works:
+An engineer picks a room (or builds one on the grid) and hits Start. The agent then:
+
+Looks around to learn what objects exist (names only — NOT whether they are locked).
+Investigates an object to read its description / clue, or to collect an item it holds once unlocked.
+Uses a code it reasoned out, or a key it is carrying, on a target to unlock it.
+Repeats — thinking before every single tool call — feeding each result back into the conversation.
+Calls escape() the moment the exit door is unlocked, and the loop stops on its own.
+
+
+Input example
+(room: "Classic — clue -> code -> key -> door", move limit 8)
+
+The kickoff message the LLM receives:
+"You wake up locked inside the room. Begin escaping. Remember: think first, then
+call exactly one tool. You have a strict limit of 8 moves (tool calls) — if you
+run out, you fail. Do not waste moves."
+
+The room the engine holds (hidden from the agent — it must discover it):
+  table 1  -> clue "Box Code: 4829"
+  box 1    -> locked, code 4829, holds brass_key
+  door     -> locked, needs brass_key, is the exit
+
+
+Script to run it
+
+# 0) EITHER set an API key (token provider) ...
+#    get one: https://console.anthropic.com -> API Keys -> Create Key (sk-ant-...)
+#    put it in backend/.env  (git-ignored):   ANTHROPIC_API_KEY=sk-ant-...
+#    NOTE: there is no local/offline Claude model — the API path calls Anthropic.
+#
+#    ... OR use the local CLI (no key): just have Claude Code installed & logged in
+#        (`claude` on PATH). With no key, `auto` uses the CLI automatically.
+
+# one command — starts backend (:8000) + frontend (:5173), open http://localhost:5173
+./start.sh
+
+# or drive one room headless and print the trace (provider = auto | api | cli):
+cd backend
+python3 - <<'PY'
+import game, agent
+state = game.GameState(game.DEFAULT_ROOM)                       # the Classic room
+for ev in agent.run_agent(state, move_limit=8, provider="cli"): # <- CLI = no API key
+    print(ev["type"], ev.get("tool") or "", ev.get("text") or ev.get("input") or "")
+PY
+
+
+Example logs showing the looping progress
+(REAL run, Classic room, provider=cli — using the local Claude Code login, no API key)
+(each iteration = INPUT the LLM had -> TOOL it chose -> OUTPUT fed back to it)
+
+------- iteration 1
+INPUT   (to LLM): kickoff + system prompt + tools spec + "[You can see: door, box 1, table 1. Carrying: (nothing).]"
+TOOL     used   : investigate_item(item_name="table 1")
+          thinking: "I have no clues yet, so I should first investigate table 1, which likely holds a clue."
+OUTPUT  (to LLM): "A dusty wooden table. Taped underneath is a sticky note that reads: 'Box Code: 4829'"
+
+------- iteration 2
+INPUT   (to LLM): everything above + the clue "Box Code: 4829"
+TOOL     used   : use_item_on_target(item_to_use="4829", target_object="box 1")
+          thinking: "The sticky note gave me 'Box Code: 4829'. Box 1 has a keypad, so try this code on box 1."
+OUTPUT  (to LLM): "The code is correct! The box 1 clicks open — it is now unlocked."
+
+------- iteration 3
+INPUT   (to LLM): everything above + "box 1 is now unlocked"
+TOOL     used   : investigate_item(item_name="box 1")
+          thinking: "Box 1 is unlocked. Investigate it to see what's inside — likely a key for the door."
+OUTPUT  (to LLM): "You found a brass_key inside the box 1! It has been added to your inventory."
+
+------- iteration 4
+INPUT   (to LLM): everything above + "you are carrying: brass_key"
+TOOL     used   : use_item_on_target(item_to_use="brass_key", target_object="door")
+          thinking: "I now hold a brass_key and the door has a keyhole. Try the key on the door."
+OUTPUT  (to LLM): "The brass_key turns with a heavy thud! The door is now unlocked."
+
+------- iteration 5
+INPUT   (to LLM): everything above + "the door is now unlocked"
+TOOL     used   : escape()
+          thinking: "The door is unlocked. The next logical step is to escape through it."
+OUTPUT  (to LLM): "SUCCESS! You have opened the door and escaped the room!"
+
+------- loop terminates: escape() succeeded -> state.escaped = True
+
+
+Expected output (roughly)
+
+Outcome: ESCAPED in 5 moves (of 8 allowed).
+
+Path the agent discovered on its own:
+  investigate table 1 (found "Box Code: 4829")
+  -> use 4829 on box 1 (unlocked) -> investigate box 1 (got brass_key)
+  -> use brass_key on door (unlocked) -> escape (success)
+
+Why this is a real agentic loop, not a script:
+  - The agent was told NOTHING about the room; it discovered every object and lock by acting.
+    (Note this real run even SKIPPED look_around — it reasoned straight from the object names.)
+  - It chose each tool itself; the engine only resolved the tool and handed back the result.
+  - The loop ran purely because the model kept asking for another tool, and it stopped
+    itself the instant the door opened.
+
+Try the "capstone" room to see the same loop end DIFFERENTLY across runs (the code
+must be derived, a wrong guess jams the door forever) — same input, different endings,
+which no fixed algorithm can produce.

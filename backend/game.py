@@ -167,6 +167,29 @@ PRESETS = [
         },
     },
     {
+        "id": "capstone",
+        "name": "One-shot lock — reason it out, or jam it forever",
+        "description": (
+            "The strongest single demo of a real agent. Three properties at once: "
+            "(1) NON-SYSTEMATIC — the door code is written NOWHERE; you must DERIVE it "
+            "(reverse the number on the clock), and a decoy note shows the literal wrong "
+            "code. (2) IRREVERSIBLE STAKES — the keypad is fragile: ONE wrong entry jams it "
+            "for good and dooms the room, so a brute-forcer that 'tries the code it found' "
+            "enters the decoy and loses. (3) NON-DETERMINISTIC — run it several times: same "
+            "room, sometimes the agent derives 2413 and ESCAPES, sometimes it risks the decoy "
+            "and JAMS. Only reasoning plus the restraint to act when certain gets out."
+        ),
+        "room": {
+            "items": [
+                {"id": "door", "name": "door", "description": "The exit door has a 4-digit keypad. The keypad is old and delicate — a note beside it warns that ONE wrong entry will jam it permanently.", "isLocked": True, "codeRequired": "2413", "maxAttempts": 1, "isExit": True, "x": 2, "y": 0},
+                {"id": "painting", "name": "painting", "description": "A framed painting hangs crookedly.", "clue": "To open the door, read the number etched on the clock and enter its digits in REVERSE order.", "x": 0, "y": 0},
+                {"id": "clock", "name": "clock", "description": "A stopped wall clock with a number etched across its face.", "clue": "The number etched on the clock is 3142.", "x": 4, "y": 0},
+                {"id": "note", "name": "sticky note", "description": "A sticky note stuck by the door.", "clue": "code: 3142", "x": 2, "y": 3},
+            ],
+            "inventory": [],
+        },
+    },
+    {
         "id": "unsolvable",
         "name": "Dead end — no way out (agent should give up)",
         "description": "The door needs a golden key that exists NOWHERE in the room. The agent explores everything, then concludes 'I can't solve it'.",
@@ -213,6 +236,7 @@ def _snap(item: dict | None) -> dict | None:
         "status": item.get("status"),
         "isLocked": item.get("isLocked"),
         "holdsItem": item.get("holdsItem"),
+        "attempts": item.get("attempts"),
     }
 
 
@@ -224,9 +248,11 @@ class GameState:
         self.items: list[dict] = room.get("items", [])
         self.inventory: list[str] = list(room.get("inventory", []))
         self.escaped: bool = False
-        # Give every object an explicit status field (its state-machine value).
+        # Give every object an explicit status field (its state-machine value)
+        # and a wrong-attempt counter for the fragile-lock (jam) mechanic.
         for it in self.items:
             it["status"] = _init_status(it)
+            it.setdefault("attempts", 0)
 
     # --- lookups -----------------------------------------------------------
 
@@ -314,6 +340,15 @@ class GameState:
         if target is None:
             return f"There is no '{target_object}' to use that on."
 
+        # A jammed lock is dead forever — no code or key will ever open it.
+        if target.get("status") == "jammed":
+            return (
+                f"The {target['name']}'s mechanism is jammed solid. "
+                f"It will never open now — nothing you do can undo that."
+            )
+
+        has_lock = target.get("codeRequired") is not None or target.get("keyRequired") is not None
+
         # A code opens a coded lock.
         if target.get("codeRequired") is not None:
             if str(item_to_use).strip() == str(target["codeRequired"]).strip():
@@ -331,6 +366,28 @@ class GameState:
                 target["isLocked"] = False
                 target["status"] = "unlocked"
                 return f"The {target['keyRequired']} turns with a heavy thud! The {target['name']} is now unlocked."
+
+        # --- wrong attempt --------------------------------------------------
+        # A fragile lock (maxAttempts set) tolerates only so many WRONG tries on
+        # a still-locked object; the next wrong try jams it permanently. This is
+        # the universal "you can break the puzzle" mechanic: it works on ANY
+        # lockable object (door, box, safe...) just by giving it maxAttempts.
+        max_attempts = target.get("maxAttempts")
+        if has_lock and target.get("isLocked") and max_attempts:
+            target["attempts"] = int(target.get("attempts", 0)) + 1
+            remaining = int(max_attempts) - target["attempts"]
+            if remaining <= 0:
+                target["status"] = "jammed"
+                return (
+                    f"WRONG — and that was one wrong try too many. The {target['name']}'s "
+                    f"mechanism JAMS with a grinding snap. It is now permanently stuck; "
+                    f"it can NEVER be opened, even with the correct code or key."
+                )
+            return (
+                f"Nothing happens — '{item_to_use}' is not right for the {target['name']}, "
+                f"and you feel the mechanism strain. It looks like only {remaining} more "
+                f"wrong attempt(s) before it jams for good."
+            )
 
         # Anything else — wrong code, wrong key, key you don't hold, using scenery,
         # a target with no lock — gives no hint. Just like a real escape room.

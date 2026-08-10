@@ -22,7 +22,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 import game
-from agent import run_agent
+from agent import run_agent, _cli_available
 from skill import SYSTEM_PROMPT, TOOLS
 
 app = FastAPI(title="Escape Room Agent")
@@ -94,6 +94,7 @@ class CreateSessionBody(BaseModel):
     api_key: str | None = None        # optional override; server env var wins otherwise
     model: str = "claude-sonnet-5"
     move_limit: int = 15              # max tool calls before "out of moves"
+    provider: str = "auto"            # "auto" | "api" | "cli" — how to reach Claude
 
 
 class HistoryBody(BaseModel):
@@ -135,6 +136,7 @@ def health() -> dict:
     return {
         "ok": True,
         "has_api_key": bool(os.environ.get("ANTHROPIC_API_KEY")),
+        "has_cli": _cli_available(),
         "tools": [t["name"] for t in TOOLS],
     }
 
@@ -251,6 +253,7 @@ def create_session(body: CreateSessionBody) -> dict:
         "api_key": body.api_key,
         "model": body.model,
         "move_limit": max(1, body.move_limit),
+        "provider": body.provider,
     }
     return {
         "session_id": session_id,
@@ -282,6 +285,7 @@ def run_session(session_id: str):
             api_key=session["api_key"],
             model=session["model"],
             move_limit=session["move_limit"],
+            provider=session.get("provider", "auto"),
         ):
             yield f"data: {json.dumps(event)}\n\n"
         yield "event: end\ndata: {}\n\n"

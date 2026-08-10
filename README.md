@@ -11,47 +11,99 @@ works and `AGENTIC_LOOP_ANALYSIS.md` for a full audit with runtime evidence.
 
 ---
 
+## Quick start (one command)
+
+```bash
+git clone <this-repo-url>
+cd escape-room
+
+# 1) install deps
+cd backend && pip install -r requirements.txt && cd ..   # anthropic, fastapi, uvicorn
+#   (the frontend's npm install runs automatically on first ./start.sh)
+
+# 2) give the backend an Anthropic API key (see "The API key" below)
+#    — OR skip this entirely and use the local `claude` CLI (see the table below)
+echo 'ANTHROPIC_API_KEY=sk-ant-REPLACE_ME' > backend/.env
+
+# 3) run everything — backend :8000 + frontend :5173, Ctrl-C stops both
+./start.sh
+```
+
+Then open **http://localhost:5173** and hit **▶ Start Escaping**.
+
+> If `./start.sh` says *permission denied*, run `chmod +x start.sh` once.
+> On macOS the script is written for the built-in bash 3.2 — no extra shell needed.
+
+## Two ways to run the agent (no API key required)
+
+The backend can reach Claude two ways, chosen per run by `provider`:
+
+| provider | how it reaches Claude | needs |
+|---|---|---|
+| `api`  | the Anthropic SDK (native tool_use) | a valid `ANTHROPIC_API_KEY` (pay-as-you-go) |
+| `cli`  | the local `claude` CLI, headless (`claude -p`) | Claude Code installed & logged in — **no key** |
+| `auto` (default) | API if a key works, else the CLI | either of the above |
+
+So if your API key is missing or **expired (401)**, `auto` transparently falls
+back to the local `claude` CLI and keeps going on your Claude Code login. There
+is no local/offline Claude *model* — the `cli` path still calls Anthropic, it
+just authenticates with your Claude Code session instead of an API key.
+
+Check what's available: `curl http://localhost:8000/api/health` →
+`{"has_api_key": true|false, "has_cli": true|false, ...}`.
+
 ## Prerequisites
 
 - Python 3.10+
 - Node 18+
-- **An Anthropic API key** (see below)
+- **One of:** an Anthropic API key (`api`/`auto`), **or** Claude Code installed
+  and logged in (`cli`/`auto`)
 
-## The Anthropic API key (required)
+## The API key (for the `api` / `auto` providers)
 
-The backend reads the key from the `ANTHROPIC_API_KEY` environment variable.
-There is **no key input in the UI** — you must provide it to the server before
-starting it. Two options:
+Skip this if you're using the `cli` provider (Claude Code login). Otherwise:
 
-**Option A — export it in the shell (quickest):**
+**Get one:** https://console.anthropic.com → **API Keys** → **Create Key** →
+copy the `sk-ant-...` value (shown once). The account needs a little credit;
+a full escape run is a handful of small calls (cents on Haiku/Sonnet).
+
+**Give it to the backend** one of two ways — the backend reads the
+`ANTHROPIC_API_KEY` environment variable:
+
+- **Option A — a `.env` file (recommended, set once).** Put it in `backend/.env`
+  (git-ignored, so it's never committed):
+  ```bash
+  # backend/.env  — one line, no quotes, no spaces around the =
+  ANTHROPIC_API_KEY=sk-ant-...
+  ```
+  `./start.sh` loads this automatically.
+
+- **Option B — export it in your shell** (takes priority over `.env`):
+  ```bash
+  export ANTHROPIC_API_KEY=sk-ant-...
+  ./start.sh
+  ```
+
+**Verify the server sees a key:**
 ```bash
-export ANTHROPIC_API_KEY=sk-ant-...
+curl http://localhost:8000/api/health      # -> {"ok": true, "has_api_key": true, ...}
 ```
-
-**Option B — a `.env` file** in `backend/` (git-ignored):
-```bash
-# backend/.env
-ANTHROPIC_API_KEY=sk-ant-...
-```
-Then load it before running, e.g. `export $(grep -v '^#' .env | xargs)` (or use
-your own dotenv loader).
-
-Verify the server sees it: `curl http://localhost:8000/api/health` →
-`{"ok": true, "has_api_key": true, ...}`.
+Note: `has_api_key: true` only means a key is *present*. If runs fail with
+**401 "API key is invalid"**, the key is wrong/revoked — regenerate it.
 
 ---
 
-## 1. Backend
+## Run it manually (two terminals) — alternative to `./start.sh`
 
+**Terminal 1 — backend**
 ```bash
 cd backend
 pip install -r requirements.txt          # anthropic, fastapi, uvicorn
-export ANTHROPIC_API_KEY=sk-ant-...       # your key (see above)
+export ANTHROPIC_API_KEY=sk-ant-...       # or rely on backend/.env
 uvicorn main:app --reload --port 8000
 ```
 
-## 2. Frontend
-
+**Terminal 2 — frontend**
 ```bash
 cd frontend
 npm install
@@ -93,7 +145,7 @@ Extras:
 | POST | `/api/presets` | create a user room |
 | PUT  | `/api/presets/{id}` | save edits to a room |
 | DELETE | `/api/presets/{id}` | delete a user room / revert a built-in |
-| POST | `/api/session` | create a session from a room config |
+| POST | `/api/session` | create a session from a room config (body accepts `provider`: `auto`/`api`/`cli`, `model`, `move_limit`) |
 | GET  | `/api/session/{id}/state` | current room snapshot |
 | GET  | `/api/session/{id}/run` | **SSE** — run the agentic loop |
 | POST | `/api/session/{id}/actions/{tool}` | run one tool manually (look_around, investigate_item, use_item_on_target, escape) |

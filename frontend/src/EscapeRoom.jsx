@@ -30,7 +30,7 @@ const CANDIDATE_CELLS = [
 const EMPTY_ITEM = () => ({
   id: "", name: "", description: "", isVisible: true, isLocked: false,
   codeRequired: "", keyRequired: "", holdsItem: "", clue: "", isExit: false,
-  x: undefined, y: undefined,
+  maxAttempts: "", x: undefined, y: undefined,
 });
 
 const norm = (s) => String(s || "").trim().toLowerCase().replace(/[_\s]/g, "");
@@ -94,6 +94,10 @@ function cleanItem(raw, index) {
   if (raw.codeRequired?.toString().trim()) item.codeRequired = raw.codeRequired.toString().trim();
   if (raw.keyRequired?.trim()) item.keyRequired = raw.keyRequired.trim();
   if (raw.holdsItem?.trim()) item.holdsItem = raw.holdsItem.trim();
+  // Fragile lock: after this many WRONG attempts the object jams permanently.
+  // Only meaningful on a lockable object; 0/blank means "never jams".
+  const maxTries = parseInt(raw.maxAttempts, 10);
+  if (Number.isFinite(maxTries) && maxTries > 0) item.maxAttempts = maxTries;
   if (raw.isExit) item.isExit = true;
   if (Number.isFinite(raw.x)) item.x = raw.x;
   if (Number.isFinite(raw.y)) item.y = raw.y;
@@ -109,6 +113,7 @@ function cleanItem(raw, index) {
 
 export default function EscapeRoom() {
   const [moveLimit, setMoveLimit] = useState(() => Number(localStorage.getItem("er_move_limit")) || 15);
+  const [provider, setProvider] = useState(() => localStorage.getItem("er_provider") || "auto");
   const [loop, setLoop] = useState(() => localStorage.getItem("er_loop") === "1");
   const [items, setItems] = useState([]);
   const [liveState, setLiveState] = useState({ items: [], inventory: [], escaped: false });
@@ -398,6 +403,12 @@ export default function EscapeRoom() {
 
   // --- lock lookup for the map ---------------------------------------------
 
+  const jammedByName = useMemo(() => {
+    const s = new Set();
+    liveState.items.forEach((it) => { if (it.status === "jammed") s.add(norm(it.name)); });
+    return s;
+  }, [liveState]);
+
   const lockByName = useMemo(() => {
     const m = {};
     liveState.items.forEach((it) => { if ("isLocked" in it) m[norm(it.name)] = it.isLocked; });
@@ -421,6 +432,7 @@ export default function EscapeRoom() {
     reset(true);
     setStatus("Running...");
     localStorage.setItem("er_move_limit", String(moveLimit));
+    localStorage.setItem("er_provider", provider);
     const myRun = ++runIdRef.current;
 
     try {
@@ -428,7 +440,7 @@ export default function EscapeRoom() {
       const res = await fetch("/api/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ room, move_limit: moveLimit }),
+        body: JSON.stringify({ room, move_limit: moveLimit, provider }),
       });
       if (!res.ok) throw new Error(`Failed to create session (${res.status}).`);
       const data = await res.json();
@@ -560,7 +572,17 @@ export default function EscapeRoom() {
         break;
 
       case "status":
-        if (event.text && /retry|overload|switching/i.test(event.text)) {
+        // Show ret/overload notes, and the per-move "CLI is thinking…" waits so
+        // the slow CLI provider (~5-7s/move) visibly shows activity, not a freeze.
+        if (event.cli_wait) {
+          setStatus("Thinking… (CLI)");
+          setSteps((prev) => {
+            // keep just one live "thinking…" note (replace the previous one)
+            const trimmed = prev.length && prev[prev.length - 1].note?.startsWith("Claude (CLI)")
+              ? prev.slice(0, -1) : prev;
+            return [...trimmed, { note: event.text }];
+          });
+        } else if (event.text && /retry|overload|switching|falling back|using the local/i.test(event.text)) {
           setSteps((prev) => [...prev, { note: event.text }]);
         }
         break;
@@ -671,9 +693,18 @@ export default function EscapeRoom() {
               </p>
             )}
           </Card>
+
+          {/* World State — moved under the Item Editor (left column) */}
+          <Card title="🗃️ World State (JSON) — updates object-by-object each iteration">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {liveState.items.map((it) => (
+                <StateObjectCard key={it.id} item={it} update={lastUpdate?.target === it.id ? lastUpdate : null} />
+              ))}
+            </div>
+          </Card>
         </section>
 
-        {/* RIGHT: grid + live state + trace + world state */}
+        {/* RIGHT: grid + live state + trace */}
         <section className="lg:col-span-3 space-y-4">
           {/* Presets */}
           <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-3">
@@ -741,6 +772,17 @@ export default function EscapeRoom() {
               className={`px-4 py-2 rounded text-sm font-semibold border ${loop ? "bg-sky-600 hover:bg-sky-500 border-sky-400 text-white" : "bg-slate-800 hover:bg-slate-700 border-slate-600 text-slate-300"}`}>
               🔁 Loop{loop ? " ON" : " OFF"}
             </button>
+            <label className="flex items-center gap-1.5 text-xs text-slate-400"
+              title="How the backend reaches Claude: auto (API key, else CLI) · api (needs ANTHROPIC_API_KEY) · cli (local Claude Code login, no key)">
+              <span>Claude via</span>
+              <select value={provider} onChange={(e) => setProvider(e.target.value)} disabled={isRunning}
+                className="bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-xs text-slate-200 disabled:opacity-50">
+                <option value="auto">auto (key → CLI)</option>
+                <option value="api">api (token)</option>
+                <option value="cli">cli (local login)</option>
+              </select>
+              {provider === "cli" && <span className="text-[10px] text-amber-400" title="Each move spawns a fresh `claude -p` process">~7s/move</span>}
+            </label>
             <div className="ml-auto flex items-center gap-4 text-xs">
               {loop && <span className="text-sky-400 animate-pulse">looping…</span>}
               {isRunning && <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />}
@@ -755,6 +797,7 @@ export default function EscapeRoom() {
               <RoomMap
                 items={items}
                 lockByName={lockByName}
+                jammedByName={jammedByName}
                 agentPos={agentPos}
                 agentTool={agentTool}
                 connector={connector}
@@ -804,15 +847,6 @@ export default function EscapeRoom() {
               </Card>
             </div>
           </div>
-
-          {/* World State — one JSON object per item, flashes + diffs on the iteration it changes */}
-          <Card title="🗃️ World State (JSON) — updates object-by-object each iteration">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {liveState.items.map((it) => (
-                <StateObjectCard key={it.id} item={it} update={lastUpdate?.target === it.id ? lastUpdate : null} />
-              ))}
-            </div>
-          </Card>
         </section>
       </main>
 
@@ -860,7 +894,7 @@ function mergeIter(prev, iteration, patch) {
 
 /* ---------- 2D map ---------- */
 
-function RoomMap({ items, lockByName, agentPos, agentTool, connector, effect, confetti, confettiPieces, editable, selectedIndex, onAddCell, onSelectItem, moveLimit, onMoveLimit }) {
+function RoomMap({ items, lockByName, jammedByName, agentPos, agentTool, connector, effect, confetti, confettiPieces, editable, selectedIndex, onAddCell, onSelectItem, moveLimit, onMoveLimit }) {
   const toolBadge = agentTool === "search" ? "🔍" : agentTool === "hand" ? "🖐️" : agentTool === "look" ? "👀" : null;
 
   // Map each cell -> item index (for the tile + click behaviour).
@@ -889,6 +923,7 @@ function RoomMap({ items, lockByName, agentPos, agentTool, connector, effect, co
             const it = idx != null ? items[idx] : null;
             if (it) {
               const locked = lockByName[norm(it.name)];
+              const jammed = jammedByName?.has(norm(it.name));
               const isDoor = it.isExit || (it.name || "").toLowerCase().includes("door");
               const selected = idx === selectedIndex;
               return (
@@ -905,7 +940,9 @@ function RoomMap({ items, lockByName, agentPos, agentTool, connector, effect, co
                     {iconFor(it)}
                   </span>
                   <span className="text-[8px] leading-none text-slate-300 truncate max-w-full px-0.5">{it.name || "?"}</span>
-                  {locked !== undefined && <span className="absolute top-0 right-0.5 text-[10px] leading-none">{locked ? "🔒" : "🔓"}</span>}
+                  {jammed
+                    ? <span className="absolute top-0 right-0.5 text-[10px] leading-none" title="jammed — permanently stuck">⛔</span>
+                    : locked !== undefined && <span className="absolute top-0 right-0.5 text-[10px] leading-none">{locked ? "🔒" : "🔓"}</span>}
                 </button>
               );
             }
@@ -1009,6 +1046,7 @@ function ItemForm({ item, onField, disabled }) {
         <Field label="Key required" value={item.keyRequired} onChange={(v) => onField("keyRequired", v)} disabled={disabled} placeholder="e.g. brass_key" />
         <Field label="Holds item" value={item.holdsItem} onChange={(v) => onField("holdsItem", v)} disabled={disabled} placeholder="revealed when unlocked" />
         <Field label="Clue" value={item.clue} onChange={(v) => onField("clue", v)} disabled={disabled} placeholder="hidden hint" />
+        <Field label="Max wrong tries" value={item.maxAttempts} onChange={(v) => onField("maxAttempts", v)} disabled={disabled} placeholder="blank = never jams" />
       </div>
       <div className="flex items-center gap-5 pt-1 text-xs text-slate-400">
         <label className="flex items-center gap-1.5">
@@ -1077,7 +1115,7 @@ function StepCard({ step }) {
 }
 
 function resultOk(text) {
-  return !/still locked|don't have|no '|nothing happens|unknown tool/i.test(text || "");
+  return !/still locked|don't have|no '|nothing happens|unknown tool|jam|wrong/i.test(text || "");
 }
 
 /* ---------- World State: one JSON object per item ---------- */
@@ -1089,6 +1127,7 @@ const STATUS_STYLES = {
   escaped: "bg-emerald-500/20 text-emerald-300 border-emerald-500/40",
   unexamined: "bg-slate-500/20 text-slate-400 border-slate-600/40",
   examined: "bg-sky-500/20 text-sky-300 border-sky-500/40",
+  jammed: "bg-rose-600/30 text-rose-200 border-rose-500/60",
 };
 
 function StatusBadge({ status }) {
@@ -1105,6 +1144,8 @@ function apiJson(it) {
   if (it.codeRequired) o.code_required = it.codeRequired;
   if (it.keyRequired) o.key_required = it.keyRequired;
   if ("holdsItem" in it) o.holds = it.holdsItem || null;
+  // Show the fragile-lock budget so the ticking counter is visible in the state panel.
+  if (it.maxAttempts) o.attempts = `${it.attempts || 0}/${it.maxAttempts}`;
   if (it.isExit) o.exit = true;
   return o;
 }
