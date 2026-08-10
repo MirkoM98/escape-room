@@ -90,34 +90,79 @@ PRESETS = [
         },
     },
     {
-        "id": "hinted_codes",
-        "name": "Hinted codes — take the door code, skip the rest",
-        "description": "The codes version of Hinted keys. Five boxes each hold a note with a code for a DIFFERENT lock; a book says you only need the one labelled for the DOOR (box 3). The agent should read that code and skip the remaining boxes.",
+        "id": "atomic_vault",
+        "name": "Atomic Vault — only gold opens it",
+        "description": (
+            "The door code is the atomic number of gold (Au). No number is written anywhere "
+            "in the room — you must retrieve it from world knowledge. A torn periodic-table "
+            "page plants Group 11 and Period 6 as decoys; one wrong entry jams the lock forever. "
+            "A regex scanner finds no valid candidate. Only an agent with chemistry knowledge escapes."
+        ),
         "room": {
             "items": [
-                {"id": "door", "name": "door", "description": "The exit door has a 4-digit keypad.", "isLocked": True, "codeRequired": "7391", "isExit": True, "x": 2, "y": 0},
-                {"id": "book", "name": "book", "description": "An old book lies in the corner.", "clue": "Each box holds a note with a code for a different lock. You only need the one labelled for the DOOR.", "x": 0, "y": 0},
-                {"id": "box_1", "name": "box 1", "description": "A wooden box.", "clue": "Inside is a note: 'SAFE code: 1111'.", "x": 0, "y": 2},
-                {"id": "box_2", "name": "box 2", "description": "A wooden box.", "clue": "Inside is a note: 'CABINET code: 2222'.", "x": 1, "y": 2},
-                {"id": "box_3", "name": "box 3", "description": "A wooden box.", "clue": "Inside is a note: 'DOOR code: 7391'.", "x": 2, "y": 2},
-                {"id": "box_4", "name": "box 4", "description": "A wooden box.", "clue": "Inside is a note: 'DRAWER code: 4444'.", "x": 3, "y": 2},
-                {"id": "box_5", "name": "box 5", "description": "A wooden box.", "clue": "Inside is a note: 'WINDOW code: 5555'.", "x": 4, "y": 2},
+                {"id": "door", "name": "door", "description": "A heavy vault door with a numeric keypad. A warning placard reads: ONE wrong entry will jam this lock permanently.", "isLocked": True, "codeRequired": "79", "maxAttempts": 1, "isExit": True, "x": 2, "y": 0},
+                {"id": "plaque", "name": "plaque", "description": "A brass plaque bolted to the wall.", "clue": "To open the vault, enter the atomic number of gold (Au). One wrong attempt and the mechanism seizes for good.", "x": 0, "y": 0},
+                {"id": "periodic_table", "name": "periodic table", "description": "A torn page from a chemistry textbook pinned to the wall. The precious-metals section is visible.", "clue": "Au is listed at Group 11, Period 6. Someone has circled the number 11 in red ink.", "x": 4, "y": 0},
+                {"id": "chair_1", "name": "chair 1", "description": "A plain chair. Nothing under it.", "x": 2, "y": 2},
             ],
             "inventory": [],
         },
     },
     {
-        "id": "book_hint",
-        "name": "Book hint — find the brass key",
-        "description": "A book says the door needs a brass key. It's in one of the boxes (the others are decoys).",
+        "id": "miracle_on_ice",
+        "name": "Miracle on Ice — Lake Placid, 1980",
+        "description": (
+            "The door code is USA's goal count in the famous 1980 Winter Olympics ice-hockey "
+            "semifinal against the Soviet Union — 'Do you believe in miracles?' The Soviet "
+            "score (3) is visible on a scoreboard as a decoy; the winning US score (4) appears "
+            "nowhere in the room. One wrong entry jams the lock. A script tries the visible 3 "
+            "and loses. Only an agent with sports-history knowledge escapes."
+        ),
         "room": {
             "items": [
-                {"id": "door", "name": "door", "description": "The exit door has a keyhole.", "isLocked": True, "keyRequired": "brass_key", "isExit": True, "x": 2, "y": 0},
-                {"id": "book", "name": "book", "description": "An old book lies in the corner.", "clue": "To leave, you need a BRASS key. Try the boxes — only one holds it.", "x": 0, "y": 0},
-                {"id": "box_1", "name": "box 1", "description": "A dusty box.", "holdsItem": "iron_key", "x": 0, "y": 2},
-                {"id": "box_2", "name": "box 2", "description": "A dusty box.", "holdsItem": "tin_key", "x": 2, "y": 2},
-                {"id": "box_3", "name": "box 3", "description": "A dusty box.", "holdsItem": "brass_key", "x": 4, "y": 2},
-                {"id": "box_4", "name": "box 4", "description": "A dusty box.", "x": 2, "y": 3},
+                {"id": "door", "name": "door", "description": "A locker-room door with a single-digit keypad. A taped note reads: ONE wrong code and this lock seizes permanently.", "isLocked": True, "codeRequired": "4", "maxAttempts": 1, "isExit": True, "x": 2, "y": 0},
+                {"id": "poster", "name": "poster", "description": "A faded sports poster on the wall.", "clue": "Lake Placid, 1980 Winter Olympics. USA vs Soviet Union, ice-hockey semifinal. 'Do you believe in miracles?' The code is the number of goals scored by the winning team.", "x": 0, "y": 0},
+                {"id": "scoreboard", "name": "scoreboard", "description": "An old manual scoreboard hanging crookedly.", "clue": "HOME (Soviet Union): 3 | AWAY (USA): the away score has been deliberately scratched out.", "x": 4, "y": 2},
+                {"id": "chair_1", "name": "chair 1", "description": "A plain bench. Nothing underneath.", "x": 2, "y": 2},
+            ],
+            "inventory": [],
+        },
+    },
+    {
+        "id": "summit_code",
+        "name": "Summit Code — the height of the world",
+        "description": (
+            "The door code is the official height of Mount Everest in metres as announced "
+            "by the Nepal-China joint survey in 2020 (8849). An old atlas page shows a rough "
+            "early estimate of 8,000 m as a decoy. One wrong entry jams the lock. A script "
+            "that tries 8000 is done. Only an agent with up-to-date geographic knowledge escapes."
+        ),
+        "room": {
+            "items": [
+                {"id": "door", "name": "door", "description": "A reinforced door with a 4-digit keypad. A metal sign warns: ONLY ONE ATTEMPT PERMITTED. A wrong code jams the mechanism permanently.", "isLocked": True, "codeRequired": "8849", "maxAttempts": 1, "isExit": True, "x": 2, "y": 0},
+                {"id": "journal", "name": "journal", "description": "A mountaineer's journal left on the floor.", "clue": "To escape, enter the official height of Mount Everest above sea level in metres, as announced by Nepal and China in their 2020 joint survey.", "x": 0, "y": 0},
+                {"id": "atlas", "name": "atlas", "description": "A torn page from an old geographic atlas.", "clue": "Everest elevation — early rough estimate: 8,000 m (subject to resurvey). This figure predates modern satellite measurement.", "x": 4, "y": 2},
+                {"id": "chair_1", "name": "chair 1", "description": "A plain chair. Nothing under it.", "x": 2, "y": 2},
+            ],
+            "inventory": [],
+        },
+    },
+    {
+        "id": "first_footstep",
+        "name": "First Footstep — the year we touched the Moon",
+        "description": (
+            "The door code is the year Neil Armstrong first stepped onto the lunar surface. "
+            "A mission-control timeline on the wall shows 1968 (the year of Apollo 8's first "
+            "crewed lunar orbit) as a prominent decoy — a script extracts 1968 and jams the "
+            "lock on its one permitted attempt. Only an agent that distinguishes 'first orbit' "
+            "from 'first footstep' (1969) escapes."
+        ),
+        "room": {
+            "items": [
+                {"id": "door", "name": "door", "description": "A door with a 4-digit year keypad. A handwritten sign is taped beside it: FRAGILE — one wrong year and this lock jams for good.", "isLocked": True, "codeRequired": "1969", "maxAttempts": 1, "isExit": True, "x": 2, "y": 0},
+                {"id": "plaque", "name": "plaque", "description": "A commemorative plaque on the wall.", "clue": "The code is the year Neil Armstrong first set foot on the surface of the Moon.", "x": 0, "y": 0},
+                {"id": "timeline", "name": "timeline", "description": "A mission-control timeline chart pinned to the wall.", "clue": "Apollo program milestones — First crewed lunar orbit: 1968 (Apollo 8, December). First lunar footstep: [REDACTED].", "x": 4, "y": 2},
+                {"id": "chair_1", "name": "chair 1", "description": "A plain chair. Nothing under it.", "x": 2, "y": 2},
             ],
             "inventory": [],
         },
@@ -133,35 +178,6 @@ PRESETS = [
                 {"id": "note", "name": "sticky note", "description": "A sticky note on the wall.", "clue": "code: 1234", "x": 4, "y": 0},
                 {"id": "box_1", "name": "box 1", "description": "A small box.", "holdsItem": "rusty_key", "x": 1, "y": 2},
                 {"id": "chair_1", "name": "chair 1", "description": "A plain chair. Nothing under it.", "x": 3, "y": 2},
-            ],
-            "inventory": [],
-        },
-    },
-    {
-        "id": "nondeterministic",
-        "name": "Non-deterministic proof — same room, different endings",
-        "description": "The book shows 1234, but the door code is its REVERSE (4321). Sometimes the agent guesses the reversal and ESCAPES, sometimes it gives up (STUCK). Run it several times: identical room, different outcomes — that is impossible for a deterministic script.",
-        "room": {
-            "items": [
-                {"id": "door", "name": "door", "description": "The exit door has a 4-digit keypad.", "isLocked": True, "codeRequired": "4321", "isExit": True, "x": 2, "y": 0},
-                {"id": "book", "name": "book", "description": "An old book.", "clue": "Code: 1234", "x": 0, "y": 0},
-                {"id": "chair_1", "name": "chair 1", "description": "A plain chair. Nothing under it.", "x": 4, "y": 2},
-            ],
-            "inventory": [],
-        },
-    },
-    {
-        "id": "nonsystemic",
-        "name": "Non-systemic proof — assemble the code, ignore the decoy",
-        "description": "The real door code is written NOWHERE. It must be assembled from four positional clues (digit 1 is 3, digit 2 is 5, ...). A systematic 'try every code you find' approach only finds a decoy (0000) and fails — only reasoning wins.",
-        "room": {
-            "items": [
-                {"id": "door", "name": "door", "description": "The exit door has a 4-digit keypad.", "isLocked": True, "codeRequired": "3524", "isExit": True, "x": 2, "y": 0},
-                {"id": "painting", "name": "painting", "description": "A framed painting.", "clue": "The 1st digit of the door code is 3.", "x": 0, "y": 0},
-                {"id": "clock", "name": "clock", "description": "A wall clock.", "clue": "The 2nd digit of the door code is 5.", "x": 4, "y": 0},
-                {"id": "rug", "name": "rug", "description": "A woven rug.", "clue": "The 3rd digit of the door code is 2.", "x": 1, "y": 2},
-                {"id": "vase", "name": "vase", "description": "A ceramic vase.", "clue": "The 4th digit of the door code is 4.", "x": 3, "y": 2},
-                {"id": "note", "name": "sticky note", "description": "A sticky note.", "clue": "code: 0000", "x": 2, "y": 3},
             ],
             "inventory": [],
         },
