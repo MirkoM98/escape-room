@@ -13,6 +13,7 @@ import {
   addUserRoom, appendRun, clearRuns, deleteRoom, getRun,
   listRuns, mergeRooms, revertRoom, saveRoomEdit,
 } from "./lib/storage";
+import { isMuted, setMuted, soundtrackEnabled, startSoundtrack, stopSoundtrack } from "./lib/soundtrack";
 import { mergeIter } from "./lib/trace";
 
 const HISTORY_SOURCE = {
@@ -49,6 +50,7 @@ export default function EscapeRoom() {
   const [showHistory, setShowHistory] = useState(false);
   const [historyStore, setHistoryStore] = useState("none");
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [muted, setMutedState] = useState(isMuted);
   // Presets (built-ins + user rooms) all live on the backend now, so edits are
   // permanent. Each carries `custom` and `edited` flags from the server.
   const [presets, setPresets] = useState([]);
@@ -150,7 +152,7 @@ export default function EscapeRoom() {
       })
       .catch(() => setError("Could not reach the backend at /api. Is the server running on :8000?"));
     refreshPresets();
-    return () => { abortRef.current?.abort(); };
+    return () => { abortRef.current?.abort(); stopSoundtrack(); };
   }, []);
 
   const refreshPresets = () =>
@@ -395,6 +397,7 @@ export default function EscapeRoom() {
   // --- SSE + animated event queue ------------------------------------------
 
   const start = async () => {
+    startSoundtrack();
     reset(true);
     setStatus("Running...");
     localStorage.setItem("er_move_limit", String(moveLimit));
@@ -509,6 +512,7 @@ export default function EscapeRoom() {
 
       case "done":
         doneRef.current = true;
+        stopSoundtrack();
         if (event.reason === "escaped") {
           const d = doorCoords();
           setAgentPos(d);
@@ -559,6 +563,7 @@ export default function EscapeRoom() {
   };
 
   const reset = (keepConfigOnly) => {
+    if (!keepConfigOnly) stopSoundtrack();
     runIdRef.current++;
     abortRef.current?.abort();
     abortRef.current = null;
@@ -751,8 +756,16 @@ export default function EscapeRoom() {
           {/* Controls */}
           <div className="flex items-center gap-3 flex-wrap">
             <button onClick={start} disabled={isRunning || items.length === 0}
-              className="px-4 py-2 rounded bg-emerald-600 hover:bg-emerald-500 text-sm font-semibold disabled:opacity-40">▶ Start Escaping</button>
+              className="px-4 py-2 rounded bg-emerald-600 hover:bg-emerald-500 text-sm font-semibold disabled:opacity-40">{soundtrackEnabled() ? "▶ Start Fiken" : "▶ Start Escaping"}</button>
             <button onClick={() => reset(false)} className="px-4 py-2 rounded bg-red-600 hover:bg-red-500 text-sm font-semibold">↺ Reset Game</button>
+            {soundtrackEnabled() && (
+              <button
+                onClick={() => { const next = !muted; setMuted(next); setMutedState(next); }}
+                title={muted ? "Sound is off" : "Sound plays while a run is going"}
+                className="px-3 py-2 rounded text-sm border border-slate-600 bg-slate-800 hover:bg-slate-700 text-slate-300">
+                {muted ? "🔇" : "🔊"}
+              </button>
+            )}
             <label className="flex items-center gap-1.5 text-xs text-slate-400"
               title="How the backend reaches Claude: auto (API key, else CLI) · api (needs ANTHROPIC_API_KEY) · cli (local Claude Code login, no key)">
               <span>Claude via</span>
@@ -799,6 +812,7 @@ export default function EscapeRoom() {
                 onMoveLimit={setMoveLimit}
                 maxMoveLimit={maxMoveLimit}
                 showAgent={status !== "Idle"}
+                dj={soundtrackEnabled() && isRunning && !muted}
               />
 
               {/* Live State — moved directly under the map */}

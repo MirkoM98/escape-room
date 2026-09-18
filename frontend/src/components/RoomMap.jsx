@@ -1,7 +1,7 @@
 import React from "react";
 import { GRID, cellPct, iconFor, norm } from "../lib/grid";
 
-export function RoomMap({ items, lockByName, jammedByName, agentPos, agentTool, connector, effect, confetti, confettiPieces, editable, selectedIndex, onAddCell, onSelectItem, moveLimit, onMoveLimit, maxMoveLimit = 40, showAgent = true }) {
+export function RoomMap({ items, lockByName, jammedByName, agentPos, agentTool, connector, effect, confetti, confettiPieces, editable, selectedIndex, onAddCell, onSelectItem, moveLimit, onMoveLimit, maxMoveLimit = 40, showAgent = true, dj = false }) {
   const toolBadge = agentTool === "search" ? "🔍" : agentTool === "hand" ? "🖐️" : agentTool === "look" ? "👀" : null;
 
   // Map each cell -> item index (for the tile + click behaviour).
@@ -99,8 +99,17 @@ export function RoomMap({ items, lockByName, jammedByName, agentPos, agentTool, 
           className="absolute flex flex-col items-center -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none"
           style={{ left: `${cellPct(agentPos.x)}%`, top: `${cellPct(agentPos.y)}%`, transition: "left 1.2s ease, top 1.2s ease" }}
         >
+          {dj && (
+            <div className="absolute -top-5 left-1/2 w-16 h-6 -translate-x-1/2">
+              <span className="absolute left-0 text-sm er-note">🎵</span>
+              <span className="absolute right-0 text-sm er-note" style={{ animationDelay: "0.8s" }}>🎶</span>
+            </div>
+          )}
           {toolBadge && <span className="text-2xl leading-none er-bob">{toolBadge}</span>}
-          <span className="text-4xl leading-none">🤖</span>
+          <span className="relative text-4xl leading-none">
+            <span className={dj ? "inline-block er-dance" : undefined}>🤖</span>
+            {dj && <span className="absolute -right-4 bottom-0 text-xl er-thump">🔊</span>}
+          </span>
         </div>}
 
         {/* confetti */}
