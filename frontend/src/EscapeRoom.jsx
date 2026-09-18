@@ -39,7 +39,11 @@ const cellPct = (v) => ((v + 0.5) / GRID) * 100;
 
 function iconFor(item) {
   const n = (item.name || "").toLowerCase();
-  if (item.isExit || n.includes("door")) return "🚪";
+  // Name wins over isExit, so an exit that is a vent/hatch keeps its own look
+  // instead of turning into a door.
+  if (n.includes("vent") || n.includes("duct") || n.includes("shaft") || n.includes("grate")) return "🕳️";
+  if (n.includes("window")) return "🪟";
+  if (n.includes("door") || n.includes("exit") || n.includes("hatch") || n.includes("gate")) return "🚪";
   if (n.includes("chest") || n.includes("box") || n.includes("crate")) return "📦";
   if (n.includes("table") || n.includes("desk")) return "🪑";
   if (n.includes("wall") || n.includes("brick")) return "🧱";
@@ -52,6 +56,7 @@ function iconFor(item) {
   if (n.includes("book") || n.includes("shelf")) return "📚";
   if (n.includes("clock")) return "🕰️";
   if (n.includes("lamp") || n.includes("light")) return "💡";
+  if (item.isExit) return "🚪";   // an exit with an unrecognized name still reads as a way out
   return "📦";
 }
 
@@ -114,6 +119,10 @@ function cleanItem(raw, index) {
 export default function EscapeRoom() {
   const [moveLimit, setMoveLimit] = useState(() => Number(localStorage.getItem("er_move_limit")) || 15);
   const [provider, setProvider] = useState(() => localStorage.getItem("er_provider") || "auto");
+  // Resizable split: width of the LEFT column (percent); the right column flexes.
+  const [leftWidth, setLeftWidth] = useState(() => Number(localStorage.getItem("er_left_w")) || 40);
+  const [isWide, setIsWide] = useState(true);
+  const [leftCollapsed, setLeftCollapsed] = useState(() => localStorage.getItem("er_left_collapsed") === "1");
   const [loop, setLoop] = useState(() => localStorage.getItem("er_loop") === "1");
   const [items, setItems] = useState([]);
   const [liveState, setLiveState] = useState({ items: [], inventory: [], escaped: false });
@@ -152,12 +161,47 @@ export default function EscapeRoom() {
   const runIdRef = useRef(0);
   const loopRef = useRef(loop);
   const loopTimerRef = useRef(null);
+  const splitRef = useRef(null);
+  const leftWidthRef = useRef(leftWidth);
 
   const isRunning = status === "Running...";
 
   useEffect(() => { itemsRef.current = items; }, [items]);
   useEffect(() => { agentPosRef.current = agentPos; }, [agentPos]);
   useEffect(() => { stepsRef.current = steps; }, [steps]);
+  useEffect(() => { leftWidthRef.current = leftWidth; }, [leftWidth]);
+
+  // Only allow the horizontal split on wide screens; stack on small ones.
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const on = () => setIsWide(mq.matches);
+    on();
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+
+  // Drag the divider: recompute the left column's width from the cursor's X.
+  const startDrag = (e) => {
+    e.preventDefault();
+    const move = (ev) => {
+      const el = splitRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const pct = Math.max(22, Math.min(72, ((ev.clientX - rect.left) / rect.width) * 100));
+      setLeftWidth(pct);
+    };
+    const up = () => {
+      window.removeEventListener("mousemove", move);
+      window.removeEventListener("mouseup", up);
+      document.body.style.userSelect = "";
+      document.body.style.cursor = "";
+      localStorage.setItem("er_left_w", String(Math.round(leftWidthRef.current)));
+    };
+    document.body.style.userSelect = "none";
+    document.body.style.cursor = "col-resize";
+    window.addEventListener("mousemove", move);
+    window.addEventListener("mouseup", up);
+  };
   useEffect(() => { roomNameRef.current = roomName; }, [roomName]);
   useEffect(() => { loopRef.current = loop; }, [loop]);
 
@@ -333,6 +377,9 @@ export default function EscapeRoom() {
   };
 
   const allPresets = presets;
+  // The preset currently loaded (matched by name); null when the grid is a
+  // custom/unsaved room. Drives the dropdown value and the per-room actions.
+  const selectedPreset = allPresets.find((p) => p.name === roomName) || null;
 
   // Auto-scroll the trace ONLY if the user is already at the bottom.
   useEffect(() => {
@@ -368,9 +415,13 @@ export default function EscapeRoom() {
       prev.map((it, i) => {
         if (i !== index) return it;
         const next = { ...it, [field]: value };
-        // Entering a code or key implies the item starts locked (user can undo).
-        if ((field === "codeRequired" || field === "keyRequired") && value && !it.isLocked) {
-          next.isLocked = true;
+        // Keep "starts locked" in sync with the presence of a code/key:
+        // entering one locks the item; clearing the last one unlocks it (so the
+        // padlock disappears). The exit door stays lockable regardless.
+        if (field === "codeRequired" || field === "keyRequired") {
+          const hasLock = !!(next.codeRequired || next.keyRequired);
+          if (hasLock && !it.isLocked) next.isLocked = true;
+          else if (!hasLock && !next.isExit && it.isLocked) next.isLocked = false;
         }
         return next;
       })
@@ -653,9 +704,9 @@ export default function EscapeRoom() {
         <div className="mx-6 mt-4 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-2 text-sm text-red-300">{error}</div>
       )}
 
-      <main className="grid grid-cols-1 lg:grid-cols-5 gap-6 p-6">
-        {/* LEFT: actions (collapsible) + single-item editor */}
-        <section className="lg:col-span-2 space-y-6">
+      <main ref={splitRef} className="flex flex-col lg:flex-row gap-6 lg:gap-0 p-6">
+        {/* LEFT: actions (collapsible) + item editor + world state — resizable width */}
+        <section className="w-full space-y-6" style={isWide ? (leftCollapsed ? { display: "none" } : { width: `${leftWidth}%` }) : undefined}>
           <div className="rounded-xl border border-slate-800 bg-slate-900/40">
             <details>
               <summary className="cursor-pointer select-none px-4 py-3 text-sm font-semibold text-slate-200">
@@ -704,26 +755,78 @@ export default function EscapeRoom() {
           </Card>
         </section>
 
-        {/* RIGHT: grid + live state + trace */}
-        <section className="lg:col-span-3 space-y-4">
-          {/* Presets */}
+        {isWide && (
+          <div className="hidden lg:block relative shrink-0 mx-1" style={{ width: leftCollapsed ? 14 : 16 }}>
+            {!leftCollapsed && (
+              <div onMouseDown={startDrag} title="Drag to resize — shrink the left, grow the trace"
+                className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-1 rounded bg-slate-700 hover:bg-emerald-500 transition-colors cursor-col-resize" />
+            )}
+            <button
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={() => setLeftCollapsed((c) => { const n = !c; localStorage.setItem("er_left_collapsed", n ? "1" : "0"); return n; })}
+              title={leftCollapsed ? "Show the left panel" : "Collapse the left panel — show only the room"}
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 w-5 h-9 flex items-center justify-center rounded bg-slate-800 border border-slate-600 text-slate-300 hover:bg-emerald-600 hover:text-white hover:border-emerald-500 text-[11px] leading-none shadow">
+              {leftCollapsed ? "▶" : "◀"}
+            </button>
+          </div>
+        )}
+
+        {/* RIGHT: grid + live state + trace — flexes to fill remaining space */}
+        <section className="w-full lg:flex-1 lg:min-w-0 space-y-4">
+          {/* Presets — a single dropdown selector + per-room actions */}
           <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-3">
-            <div className="flex items-center justify-between gap-2 mb-2">
-              <p className="text-xs text-slate-400">🎬 Load a preset room — <span className="text-emerald-400">current: {roomName}</span></p>
-              <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-sm text-slate-300 shrink-0">🎬 Room</span>
+              <select
+                value={selectedPreset?.id || ""}
+                onChange={(e) => { const p = allPresets.find((x) => x.id === e.target.value); if (p) loadPreset(p.room, p.name); }}
+                disabled={isRunning}
+                className="min-w-[240px] bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-sm text-slate-100 disabled:opacity-50">
+                {!selectedPreset && <option value="">Custom room (unsaved)</option>}
+                <optgroup label="Built-in rooms">
+                  {allPresets.filter((p) => !p.custom).map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}{p.edited ? "  ✎" : ""}</option>
+                  ))}
+                </optgroup>
+                {allPresets.some((p) => p.custom) && (
+                  <optgroup label="Your saved rooms">
+                    {allPresets.filter((p) => p.custom).map((p) => (
+                      <option key={p.id} value={p.id}>⭐ {p.name}</option>
+                    ))}
+                  </optgroup>
+                )}
+              </select>
+
+              {/* Actions for the selected room (edit / delete custom / revert built-in) */}
+              {selectedPreset && editingId !== selectedPreset.id && (
+                <button onClick={() => editPreset(selectedPreset)} disabled={isRunning} title="Load this room onto the grid to edit it"
+                  className="text-xs px-2.5 py-1.5 rounded border border-slate-700 bg-slate-800/60 text-sky-300 hover:bg-slate-700 disabled:opacity-40">✏️ Edit</button>
+              )}
+              {selectedPreset?.custom && (
+                <button onClick={() => deleteCustomPreset(selectedPreset.id)} disabled={isRunning} title="Delete this saved room"
+                  className="text-xs px-2.5 py-1.5 rounded border border-slate-700 bg-slate-800/60 text-red-400 hover:bg-slate-700 disabled:opacity-40">🗑 Delete</button>
+              )}
+              {selectedPreset?.edited && !selectedPreset?.custom && (
+                <button onClick={() => revertPreset(selectedPreset.id)} disabled={isRunning} title="Revert this built-in room to its original"
+                  className="text-xs px-2.5 py-1.5 rounded border border-slate-700 bg-slate-800/60 text-amber-300 hover:bg-slate-700 disabled:opacity-40">↺ Revert</button>
+              )}
+
+              <div className="ml-auto flex items-center gap-2 shrink-0">
                 <button onClick={openHistory}
-                  className="text-xs px-3 py-1.5 rounded border border-slate-700 bg-slate-800/60 hover:bg-slate-700">
-                  🕘 History
-                </button>
+                  className="text-xs px-3 py-1.5 rounded border border-slate-700 bg-slate-800/60 hover:bg-slate-700">🕘 History</button>
                 <button onClick={saveCurrentAsPreset} disabled={isRunning || items.length === 0}
-                  className="text-xs px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40">
-                  💾 Save current as preset
-                </button>
+                  className="text-xs px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40">💾 Save as preset</button>
               </div>
             </div>
+
+            {/* Short description of the selected room, so you know what it tests */}
+            {selectedPreset?.description && !editingId && (
+              <p className="text-[11px] text-slate-500 mt-1.5 leading-relaxed">{selectedPreset.description}</p>
+            )}
+
             {editingId && (
-              <div className="mb-2 flex items-center justify-between gap-2 rounded border border-sky-500/40 bg-sky-500/10 px-3 py-2">
-                <span className="text-xs text-sky-200">✏️ Editing preset: <b>{roomName}</b> — change items on the grid, then save.</span>
+              <div className="mt-2 flex items-center justify-between gap-2 rounded border border-sky-500/40 bg-sky-500/10 px-3 py-2">
+                <span className="text-xs text-sky-200">✏️ Editing: <b>{roomName}</b> — change items on the grid, then save.</span>
                 <div className="flex gap-2 shrink-0">
                   <button onClick={saveEdits} disabled={isRunning}
                     className="text-xs px-3 py-1 rounded bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40">💾 Save changes</button>
@@ -732,35 +835,6 @@ export default function EscapeRoom() {
                 </div>
               </div>
             )}
-            <div className="flex flex-wrap gap-2">
-              {allPresets.map((p) => {
-                const active = p.name === roomName;
-                const edited = !!p.edited;
-                const beingEdited = editingId === p.id;
-                // Edit/revert only show on the preset you've actually loaded.
-                return (
-                <div key={p.id} className={`inline-flex items-stretch rounded overflow-hidden border ${beingEdited ? "border-sky-500" : active ? "border-emerald-500" : "border-slate-700"}`}>
-                  <button onClick={() => loadPreset(p.room, p.name)} disabled={isRunning} title={p.description}
-                    className={`text-xs px-3 py-1.5 disabled:opacity-40 text-left ${active ? "bg-emerald-600/25 text-emerald-100" : "bg-slate-800/60 hover:bg-slate-700"}`}>
-                    {active ? "✓ " : p.custom ? "⭐ " : ""}{p.name}{edited ? " ✎" : ""}
-                  </button>
-                  {active && !beingEdited && (
-                    <button onClick={() => editPreset(p)} disabled={isRunning} title="Edit this preset"
-                      className="text-xs px-2 py-1.5 border-l border-slate-700 bg-slate-800/60 text-sky-300 hover:bg-slate-700 disabled:opacity-40">✏️</button>
-                  )}
-                  {active && edited && !p.custom && (
-                    <button onClick={() => revertPreset(p.id)} disabled={isRunning} title="Revert to original"
-                      className="text-xs px-2 py-1.5 border-l border-slate-700 bg-slate-800/60 text-amber-300 hover:bg-slate-700 disabled:opacity-40">↺</button>
-                  )}
-                  {p.custom && (
-                    <button onClick={() => deleteCustomPreset(p.id)} disabled={isRunning} title="Delete preset"
-                      className="text-xs px-2 py-1.5 border-l border-slate-700 bg-slate-800/60 text-red-400 hover:bg-slate-700 disabled:opacity-40">✕</button>
-                  )}
-                </div>
-                );
-              })}
-              {allPresets.length === 0 && <span className="text-xs text-slate-600">No presets yet.</span>}
-            </div>
           </div>
 
           {/* Controls */}
@@ -922,7 +996,11 @@ function RoomMap({ items, lockByName, jammedByName, agentPos, agentTool, connect
             const idx = itemAtCell[`${x},${y}`];
             const it = idx != null ? items[idx] : null;
             if (it) {
-              const locked = lockByName[norm(it.name)];
+              // While editing, the padlock must reflect the item you're building
+              // right now (code/key required + starts locked) — liveState only has
+              // items from the last run. During a run, use the live lock state.
+              const lockable = !!(it.codeRequired || it.keyRequired || it.isExit || it.isLocked);
+              const locked = editable ? (lockable ? !!it.isLocked : undefined) : lockByName[norm(it.name)];
               const jammed = jammedByName?.has(norm(it.name));
               const isDoor = it.isExit || (it.name || "").toLowerCase().includes("door");
               const selected = idx === selectedIndex;
@@ -1053,10 +1131,33 @@ function ItemForm({ item, onField, disabled }) {
           <input type="checkbox" checked={!!item.isLocked} onChange={(e) => onField("isLocked", e.target.checked)} disabled={disabled} /> starts locked
         </label>
         <label className="flex items-center gap-1.5">
-          <input type="checkbox" checked={!!item.isExit} onChange={(e) => onField("isExit", e.target.checked)} disabled={disabled} /> is the exit door
+          <input type="checkbox" checked={!!item.isExit} onChange={(e) => onField("isExit", e.target.checked)} disabled={disabled} /> is an exit (escape route)
         </label>
       </div>
     </div>
+  );
+}
+
+// Small copy-to-clipboard button with brief "copied" feedback.
+function CopyBtn({ text, label }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(text || "");
+    } catch {
+      // fallback for non-secure contexts
+      const ta = document.createElement("textarea");
+      ta.value = text || ""; document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); } catch { /* ignore */ }
+      document.body.removeChild(ta);
+    }
+    setCopied(true); setTimeout(() => setCopied(false), 1200);
+  };
+  return (
+    <button onClick={copy}
+      className="text-[10px] px-1.5 py-0.5 rounded border border-slate-700 text-slate-400 hover:text-sky-300 hover:border-sky-400">
+      {copied ? "✓ copied" : `⧉ copy${label ? " " + label : ""}`}
+    </button>
   );
 }
 
@@ -1111,14 +1212,20 @@ function StepCard({ step }) {
             <div className="mt-2 space-y-2 text-[10px]">
               {step.llmInput && (
                 <div>
-                  <div className="text-slate-500 uppercase tracking-wide mb-0.5">LLM input (exact request)</div>
-                  <pre className="max-h-52 overflow-auto bg-black/50 border border-slate-800 rounded p-2 text-sky-200/80 whitespace-pre-wrap">{step.llmInput}</pre>
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span className="text-slate-500 uppercase tracking-wide">LLM input (exact request)</span>
+                    <CopyBtn text={step.llmInput} label="input" />
+                  </div>
+                  <pre className="h-52 min-h-16 resize-y overflow-auto bg-black/50 border border-slate-800 rounded p-2 text-sky-200/80 whitespace-pre-wrap">{step.llmInput}</pre>
                 </div>
               )}
               {step.llmOutput && (
                 <div>
-                  <div className="text-slate-500 uppercase tracking-wide mb-0.5">LLM output (raw response)</div>
-                  <pre className="max-h-52 overflow-auto bg-black/50 border border-slate-800 rounded p-2 text-emerald-200/80 whitespace-pre-wrap">{step.llmOutput}</pre>
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span className="text-slate-500 uppercase tracking-wide">LLM output (raw response)</span>
+                    <CopyBtn text={step.llmOutput} label="output" />
+                  </div>
+                  <pre className="h-40 min-h-16 resize-y overflow-auto bg-black/50 border border-slate-800 rounded p-2 text-emerald-200/80 whitespace-pre-wrap">{step.llmOutput}</pre>
                 </div>
               )}
             </div>
