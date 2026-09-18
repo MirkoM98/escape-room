@@ -84,6 +84,12 @@ a full escape run is a handful of small calls (cents on Haiku/Sonnet).
   ./start.sh
   ```
 
+Both options are for running on your own machine. **A deployment does not use a
+`.env` file at all**: set `ANTHROPIC_API_KEY` as an environment variable on the
+host (on Vercel, a Project Settings environment variable, stored encrypted) and
+the backend picks it up from the process environment the same way. Never give
+it a `VITE_` prefix, or it gets inlined into the browser bundle.
+
 **Verify the server sees a key:**
 ```bash
 curl http://localhost:8000/api/health      # -> {"ok": true, "has_api_key": true, ...}
