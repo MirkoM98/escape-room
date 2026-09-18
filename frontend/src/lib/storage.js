@@ -23,7 +23,23 @@ function write(key, value) {
   }
 }
 
+function upgradeSavedRooms() {
+  const rooms = read(USER_ROOMS, []);
+  let changed = false;
+  for (const entry of rooms) {
+    for (const item of entry.room?.items || []) {
+      if (!("clue" in item)) continue;
+      item.description = [item.description, item.clue].map((t) => (t || "").trim()).filter(Boolean).join(" ");
+      delete item.clue;
+      if (!item.description) delete item.description;
+      changed = true;
+    }
+  }
+  if (changed) write(USER_ROOMS, rooms);
+}
+
 export function mergeRooms(serverRooms) {
+  upgradeSavedRooms();
   const overrides = read(OVERRIDES, {});
   const hidden = read(HIDDEN, []);
   const fromServer = serverRooms

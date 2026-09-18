@@ -33,8 +33,7 @@ DEFAULT_ROOM = {
         {
             "id": "table_1",
             "name": "table 1",
-            "description": "A dusty wooden table.",
-            "clue": "Taped underneath is a sticky note that reads: 'Box Code: 4829'",
+            "description": "A dusty wooden table. Taped underneath is a sticky note that reads: 'Box Code: 4829'",
             "isVisible": True,
             "x": 3, "y": 2,
         },
@@ -75,7 +74,7 @@ PRESETS = [
         "room": {
             "items": [
                 {"id": "door", "name": "door", "description": "A heavy exit door with a keyhole.", "isLocked": True, "keyRequired": "brass_key", "isExit": True, "x": 2, "y": 0},
-                {"id": "book", "name": "book", "description": "An old book lies in the corner.", "clue": "To leave you need the BRASS key. It is inside one of the boxes — the other keys fit nothing here.", "x": 0, "y": 0},
+                {"id": "book", "name": "book", "description": "An old book lies in the corner. To leave you need the BRASS key. It is inside one of the boxes — the other keys fit nothing here.", "x": 0, "y": 0},
                 {"id": "box_1", "name": "box 1", "description": "A wooden box.", "holdsItem": "iron_key", "x": 0, "y": 2},
                 {"id": "box_2", "name": "box 2", "description": "A wooden box.", "holdsItem": "tin_key", "x": 1, "y": 2},
                 {"id": "box_3", "name": "box 3", "description": "A wooden box.", "holdsItem": "brass_key", "x": 2, "y": 2},
@@ -97,8 +96,8 @@ PRESETS = [
         "room": {
             "items": [
                 {"id": "door", "name": "door", "description": "A heavy vault door with a numeric keypad. A warning placard reads: ONE wrong entry will jam this lock permanently.", "isLocked": True, "codeRequired": "79", "maxAttempts": 1, "isExit": True, "x": 2, "y": 0},
-                {"id": "plaque", "name": "plaque", "description": "A brass plaque bolted to the wall.", "clue": "To open the vault, enter the atomic number of gold (Au). One wrong attempt and the mechanism seizes for good.", "x": 0, "y": 0},
-                {"id": "periodic_table", "name": "periodic table", "description": "A torn page from a chemistry textbook pinned to the wall. The precious-metals section is visible.", "clue": "Au is listed at Group 11, Period 6. Someone has circled the number 11 in red ink.", "x": 4, "y": 0},
+                {"id": "plaque", "name": "plaque", "description": "A brass plaque bolted to the wall. To open the vault, enter the atomic number of gold (Au). One wrong attempt and the mechanism seizes for good.", "x": 0, "y": 0},
+                {"id": "periodic_table", "name": "periodic table", "description": "A torn page from a chemistry textbook pinned to the wall. The precious-metals section is visible. Au is listed at Group 11, Period 6. Someone has circled the number 11 in red ink.", "x": 4, "y": 0},
                 {"id": "chair_1", "name": "chair 1", "description": "A plain chair. Nothing under it.", "x": 2, "y": 2},
             ],
             "inventory": [],
@@ -117,8 +116,8 @@ PRESETS = [
         "room": {
             "items": [
                 {"id": "door", "name": "door", "description": "A locker-room door with a single-digit keypad. A taped note reads: ONE wrong code and this lock seizes permanently.", "isLocked": True, "codeRequired": "4", "maxAttempts": 1, "isExit": True, "x": 2, "y": 0},
-                {"id": "poster", "name": "poster", "description": "A faded sports poster on the wall.", "clue": "Lake Placid, 1980 Winter Olympics. USA vs Soviet Union, ice-hockey semifinal. 'Do you believe in miracles?' The code is the number of goals scored by the winning team.", "x": 0, "y": 0},
-                {"id": "scoreboard", "name": "scoreboard", "description": "An old manual scoreboard hanging crookedly.", "clue": "HOME (Soviet Union): 3 | AWAY (USA): the away score has been deliberately scratched out.", "x": 4, "y": 2},
+                {"id": "poster", "name": "poster", "description": "A faded sports poster on the wall. Lake Placid, 1980 Winter Olympics. USA vs Soviet Union, ice-hockey semifinal. 'Do you believe in miracles?' The code is the number of goals scored by the winning team.", "x": 0, "y": 0},
+                {"id": "scoreboard", "name": "scoreboard", "description": "An old manual scoreboard hanging crookedly. HOME (Soviet Union): 3 | AWAY (USA): the away score has been deliberately scratched out.", "x": 4, "y": 2},
                 {"id": "chair_1", "name": "chair 1", "description": "A plain bench. Nothing underneath.", "x": 2, "y": 2},
             ],
             "inventory": [],
@@ -136,8 +135,8 @@ PRESETS = [
         "room": {
             "items": [
                 {"id": "door", "name": "door", "description": "A reinforced door with a 4-digit keypad. A metal sign warns: THREE wrong entries will jam this mechanism permanently.", "isLocked": True, "codeRequired": "8848", "maxAttempts": 3, "isExit": True, "x": 2, "y": 0},
-                {"id": "journal", "name": "journal", "description": "A mountaineer's journal left on the floor.", "clue": "To escape, enter the official height of Mount Everest above sea level in metres, as announced by Nepal and China in their 2020 joint survey. max 4 digits", "x": 0, "y": 0},
-                {"id": "atlas", "name": "atlas", "description": "A torn page from an old geographic atlas.", "clue": "Everest elevation — early rough estimate: 8,000 m (subject to resurvey). This figure predates modern satellite measurement.", "x": 4, "y": 2},
+                {"id": "journal", "name": "journal", "description": "A mountaineer's journal left on the floor. To escape, enter the official height of Mount Everest above sea level in metres, as announced by Nepal and China in their 2020 joint survey. max 4 digits", "x": 0, "y": 0},
+                {"id": "atlas", "name": "atlas", "description": "A torn page from an old geographic atlas. Everest elevation — early rough estimate: 8,000 m (subject to resurvey). This figure predates modern satellite measurement.", "x": 4, "y": 2},
                 {"id": "chair_1", "name": "chair 1", "description": "A plain chair. Nothing under it.", "x": 2, "y": 2},
             ],
             "inventory": [],
@@ -156,8 +155,8 @@ PRESETS = [
         "room": {
             "items": [
                 {"id": "door", "name": "door", "description": "A door with a 4-digit year keypad. A handwritten sign is taped beside it: FRAGILE — one wrong year and this lock jams for good.", "isLocked": True, "codeRequired": "1969", "maxAttempts": 1, "isExit": True, "x": 2, "y": 0},
-                {"id": "plaque", "name": "plaque", "description": "A commemorative plaque on the wall.", "clue": "The code is the year Neil Armstrong first set foot on the surface of the Moon.", "x": 0, "y": 0},
-                {"id": "timeline", "name": "timeline", "description": "A mission-control timeline chart pinned to the wall.", "clue": "Apollo program milestones — First crewed lunar orbit: 1968 (Apollo 8, December). First lunar footstep: [REDACTED].", "x": 4, "y": 2},
+                {"id": "plaque", "name": "plaque", "description": "A commemorative plaque on the wall. The code is the year Neil Armstrong first set foot on the surface of the Moon.", "x": 0, "y": 0},
+                {"id": "timeline", "name": "timeline", "description": "A mission-control timeline chart pinned to the wall. Apollo program milestones — First crewed lunar orbit: 1968 (Apollo 8, December). First lunar footstep: [REDACTED].", "x": 4, "y": 2},
                 {"id": "chair_1", "name": "chair 1", "description": "A plain chair. Nothing under it.", "x": 2, "y": 2},
             ],
             "inventory": [],
@@ -170,8 +169,8 @@ PRESETS = [
         "room": {
             "items": [
                 {"id": "door", "name": "door", "description": "The exit door has a 4-digit keypad.", "isLocked": True, "codeRequired": "2468", "isExit": True, "x": 2, "y": 0},
-                {"id": "book", "name": "book", "description": "A worn notebook.", "clue": "The door code is the first four even numbers, in order. Ignore any codes you find lying around — they are decoys.", "x": 0, "y": 0},
-                {"id": "note", "name": "sticky note", "description": "A sticky note on the wall.", "clue": "code: 1234", "x": 4, "y": 0},
+                {"id": "book", "name": "book", "description": "A worn notebook. The door code is the first four even numbers, in order. Ignore any codes you find lying around — they are decoys.", "x": 0, "y": 0},
+                {"id": "note", "name": "sticky note", "description": "A sticky note on the wall. code: 1234", "x": 4, "y": 0},
                 {"id": "box_1", "name": "box 1", "description": "A small box.", "holdsItem": "rusty_key", "x": 1, "y": 2},
                 {"id": "chair_1", "name": "chair 1", "description": "A plain chair. Nothing under it.", "x": 3, "y": 2},
             ],
@@ -194,9 +193,9 @@ PRESETS = [
         "room": {
             "items": [
                 {"id": "door", "name": "door", "description": "The exit door has a 4-digit keypad. The keypad is old and delicate — a note beside it warns that ONE wrong entry will jam it permanently.", "isLocked": True, "codeRequired": "2413", "maxAttempts": 1, "isExit": True, "x": 2, "y": 0},
-                {"id": "painting", "name": "painting", "description": "A framed painting hangs crookedly.", "clue": "To open the door, read the number etched on the clock and enter its digits in REVERSE order.", "x": 0, "y": 0},
-                {"id": "clock", "name": "clock", "description": "A stopped wall clock with a number etched across its face.", "clue": "The number etched on the clock is 3142.", "x": 4, "y": 0},
-                {"id": "note", "name": "sticky note", "description": "A sticky note stuck by the door.", "clue": "code: 3142", "x": 2, "y": 3},
+                {"id": "painting", "name": "painting", "description": "A framed painting hangs crookedly. To open the door, read the number etched on the clock and enter its digits in REVERSE order.", "x": 0, "y": 0},
+                {"id": "clock", "name": "clock", "description": "A stopped wall clock with a number etched across its face. The number etched on the clock is 3142.", "x": 4, "y": 0},
+                {"id": "note", "name": "sticky note", "description": "A sticky note stuck by the door. code: 3142", "x": 2, "y": 3},
             ],
             "inventory": [],
         },
@@ -208,7 +207,7 @@ PRESETS = [
         "room": {
             "items": [
                 {"id": "door", "name": "door", "description": "A solid steel door with a single keyhole. No keypad.", "isLocked": True, "keyRequired": "golden_key", "isExit": True, "x": 2, "y": 0},
-                {"id": "note", "name": "note", "description": "A faded note.", "clue": "This door only opens with the GOLDEN KEY. Nothing else will work.", "x": 0, "y": 0},
+                {"id": "note", "name": "note", "description": "A faded note. This door only opens with the GOLDEN KEY. Nothing else will work.", "x": 0, "y": 0},
                 {"id": "box_1", "name": "box 1", "description": "A cardboard box.", "holdsItem": "spoon", "x": 1, "y": 2},
                 {"id": "box_2", "name": "box 2", "description": "A cardboard box.", "holdsItem": "coin", "x": 3, "y": 2},
                 {"id": "drawer_1", "name": "drawer 1", "description": "An empty drawer.", "x": 4, "y": 2},

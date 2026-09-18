@@ -58,10 +58,10 @@ TOOLS = [
     {
         "name": "investigate_item",
         "description": (
-            "Closely inspect a single object THAT IS IN THE ROOM to read its "
-            "description and any clue, or collect an item it holds (if it can be "
-            "opened). This does NOT work on items already in your inventory — "
-            "those you apply with use_item_on_target."
+            "Closely inspect a single object THAT IS IN THE ROOM to read what it "
+            "says, or collect an item it holds (if it can be opened). This does "
+            "NOT work on items already in your inventory — those you apply with "
+            "use_item_on_target."
         ),
         "input_schema": _schema(
             {"item_name": {"type": "string", "description": "The exact name of the object, e.g. 'table 1'."}},

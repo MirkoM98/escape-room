@@ -322,7 +322,7 @@ def _run_api(
 _CLI_TOOLS_SPEC = (
     "TOOLS — call exactly ONE per turn:\n"
     "- look_around()                              lists the names of visible objects (not their locked state)\n"
-    "- investigate_item(item_name)                read an object's description/clue, or collect an item from an unlocked container\n"
+    "- investigate_item(item_name)                read what an object says, or collect an item from an unlocked container\n"
     "- use_item_on_target(item_to_use, target_object)   enter a code, or use a key you are carrying, on a target\n"
     "- escape()                                   leave the room; only works if the exit door is already unlocked\n"
     "- give_up(reason)                            ONLY if you are certain the room cannot be solved; explain why"

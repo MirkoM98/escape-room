@@ -32,8 +32,7 @@
             "id": "table_1",
             "name": "table 1",
             "isVisible": true,
-            "description": "A dusty wooden table.",
-            "clue": "Taped underneath is a sticky note that reads: 'Box Code: 4829'",
+            "description": "A dusty wooden table. Taped underneath is a sticky note that reads: 'Box Code: 4829'",
             "x": 3,
             "y": 2
           }
@@ -158,8 +157,7 @@
             "id": "table_1",
             "name": "table 1",
             "isVisible": true,
-            "description": "A dusty wooden table.",
-            "clue": "Taped underneath is a sticky note that reads: 'Box Code: 4829'",
+            "description": "A dusty wooden table. Taped underneath is a sticky note that reads: 'Box Code: 4829'",
             "x": 3,
             "y": 2,
             "status": "examined"
@@ -203,8 +201,7 @@
             "id": "table_1",
             "name": "table 1",
             "isVisible": true,
-            "description": "A dusty wooden table.",
-            "clue": "Taped underneath is a sticky note that reads: 'Box Code: 4829'",
+            "description": "A dusty wooden table. Taped underneath is a sticky note that reads: 'Box Code: 4829'",
             "x": 3,
             "y": 2
           }
@@ -343,8 +340,7 @@
             "id": "table_1",
             "name": "table 1",
             "isVisible": true,
-            "description": "A dusty wooden table.",
-            "clue": "Taped underneath is a sticky note that reads: 'Box Code: 4829'",
+            "description": "A dusty wooden table. Taped underneath is a sticky note that reads: 'Box Code: 4829'",
             "x": 3,
             "y": 2,
             "status": "examined"
@@ -388,8 +384,7 @@
             "id": "table_1",
             "name": "table 1",
             "isVisible": true,
-            "description": "A dusty wooden table.",
-            "clue": "Taped underneath is a sticky note that reads: 'Box Code: 4829'",
+            "description": "A dusty wooden table. Taped underneath is a sticky note that reads: 'Box Code: 4829'",
             "x": 3,
             "y": 2
           }
@@ -514,8 +509,7 @@
             "id": "table_1",
             "name": "table 1",
             "isVisible": true,
-            "description": "A dusty wooden table.",
-            "clue": "Taped underneath is a sticky note that reads: 'Box Code: 4829'",
+            "description": "A dusty wooden table. Taped underneath is a sticky note that reads: 'Box Code: 4829'",
             "x": 3,
             "y": 2,
             "status": "examined"
@@ -559,8 +553,7 @@
             "id": "table_1",
             "name": "table 1",
             "isVisible": true,
-            "description": "A dusty wooden table.",
-            "clue": "Taped underneath is a sticky note that reads: 'Box Code: 4829'",
+            "description": "A dusty wooden table. Taped underneath is a sticky note that reads: 'Box Code: 4829'",
             "x": 3,
             "y": 2
           }
@@ -685,8 +678,7 @@
             "id": "table_1",
             "name": "table 1",
             "isVisible": true,
-            "description": "A dusty wooden table.",
-            "clue": "Taped underneath is a sticky note that reads: 'Box Code: 4829'",
+            "description": "A dusty wooden table. Taped underneath is a sticky note that reads: 'Box Code: 4829'",
             "x": 3,
             "y": 2,
             "status": "examined"
@@ -1303,8 +1295,7 @@
             "id": "book",
             "name": "book",
             "isVisible": true,
-            "description": "An old book lies in the corner.",
-            "clue": "To leave you need the BRASS key. It is inside one of the boxes \u2014 the other keys fit nothing here.",
+            "description": "An old book lies in the corner. To leave you need the BRASS key. It is inside one of the boxes \u2014 the other keys fit nothing here.",
             "x": 0,
             "y": 0
           },
@@ -1475,8 +1466,7 @@
             "id": "book",
             "name": "book",
             "isVisible": true,
-            "description": "An old book lies in the corner.",
-            "clue": "To leave you need the BRASS key. It is inside one of the boxes \u2014 the other keys fit nothing here.",
+            "description": "An old book lies in the corner. To leave you need the BRASS key. It is inside one of the boxes \u2014 the other keys fit nothing here.",
             "x": 0,
             "y": 0,
             "status": "examined"
@@ -1561,8 +1551,7 @@
             "id": "book",
             "name": "book",
             "isVisible": true,
-            "description": "An old book lies in the corner.",
-            "clue": "To leave you need the BRASS key. It is inside one of the boxes \u2014 the other keys fit nothing here.",
+            "description": "An old book lies in the corner. To leave you need the BRASS key. It is inside one of the boxes \u2014 the other keys fit nothing here.",
             "x": 0,
             "y": 0
           },
@@ -1733,8 +1722,7 @@
             "id": "book",
             "name": "book",
             "isVisible": true,
-            "description": "An old book lies in the corner.",
-            "clue": "To leave you need the BRASS key. It is inside one of the boxes \u2014 the other keys fit nothing here.",
+            "description": "An old book lies in the corner. To leave you need the BRASS key. It is inside one of the boxes \u2014 the other keys fit nothing here.",
             "x": 0,
             "y": 0,
             "status": "examined"
@@ -1819,8 +1807,7 @@
             "id": "book",
             "name": "book",
             "isVisible": true,
-            "description": "An old book lies in the corner.",
-            "clue": "Each box holds a note with a code for a different lock. You only need the one labelled for the DOOR.",
+            "description": "An old book lies in the corner. Each box holds a note with a code for a different lock. You only need the one labelled for the DOOR.",
             "x": 0,
             "y": 0
           },
@@ -1828,8 +1815,7 @@
             "id": "box_1",
             "name": "box 1",
             "isVisible": true,
-            "description": "A wooden box.",
-            "clue": "Inside is a note: 'SAFE code: 1111'.",
+            "description": "A wooden box. Inside is a note: 'SAFE code: 1111'.",
             "x": 0,
             "y": 2
           },
@@ -1837,8 +1823,7 @@
             "id": "box_2",
             "name": "box 2",
             "isVisible": true,
-            "description": "A wooden box.",
-            "clue": "Inside is a note: 'CABINET code: 2222'.",
+            "description": "A wooden box. Inside is a note: 'CABINET code: 2222'.",
             "x": 1,
             "y": 2
           },
@@ -1846,8 +1831,7 @@
             "id": "box_3",
             "name": "box 3",
             "isVisible": true,
-            "description": "A wooden box.",
-            "clue": "Inside is a note: 'DOOR code: 7391'.",
+            "description": "A wooden box. Inside is a note: 'DOOR code: 7391'.",
             "x": 2,
             "y": 2
           },
@@ -1855,8 +1839,7 @@
             "id": "box_4",
             "name": "box 4",
             "isVisible": true,
-            "description": "A wooden box.",
-            "clue": "Inside is a note: 'DRAWER code: 4444'.",
+            "description": "A wooden box. Inside is a note: 'DRAWER code: 4444'.",
             "x": 3,
             "y": 2
           },
@@ -1864,8 +1847,7 @@
             "id": "box_5",
             "name": "box 5",
             "isVisible": true,
-            "description": "A wooden box.",
-            "clue": "Inside is a note: 'WINDOW code: 5555'.",
+            "description": "A wooden box. Inside is a note: 'WINDOW code: 5555'.",
             "x": 4,
             "y": 2
           }
@@ -1991,8 +1973,7 @@
             "id": "book",
             "name": "book",
             "isVisible": true,
-            "description": "An old book lies in the corner.",
-            "clue": "Each box holds a note with a code for a different lock. You only need the one labelled for the DOOR.",
+            "description": "An old book lies in the corner. Each box holds a note with a code for a different lock. You only need the one labelled for the DOOR.",
             "x": 0,
             "y": 0,
             "status": "examined"
@@ -2001,8 +1982,7 @@
             "id": "box_1",
             "name": "box 1",
             "isVisible": true,
-            "description": "A wooden box.",
-            "clue": "Inside is a note: 'SAFE code: 1111'.",
+            "description": "A wooden box. Inside is a note: 'SAFE code: 1111'.",
             "x": 0,
             "y": 2,
             "status": "examined"
@@ -2011,8 +1991,7 @@
             "id": "box_2",
             "name": "box 2",
             "isVisible": true,
-            "description": "A wooden box.",
-            "clue": "Inside is a note: 'CABINET code: 2222'.",
+            "description": "A wooden box. Inside is a note: 'CABINET code: 2222'.",
             "x": 1,
             "y": 2,
             "status": "examined"
@@ -2021,8 +2000,7 @@
             "id": "box_3",
             "name": "box 3",
             "isVisible": true,
-            "description": "A wooden box.",
-            "clue": "Inside is a note: 'DOOR code: 7391'.",
+            "description": "A wooden box. Inside is a note: 'DOOR code: 7391'.",
             "x": 2,
             "y": 2,
             "status": "examined"
@@ -2031,8 +2009,7 @@
             "id": "box_4",
             "name": "box 4",
             "isVisible": true,
-            "description": "A wooden box.",
-            "clue": "Inside is a note: 'DRAWER code: 4444'.",
+            "description": "A wooden box. Inside is a note: 'DRAWER code: 4444'.",
             "x": 3,
             "y": 2,
             "status": "unexamined"
@@ -2041,8 +2018,7 @@
             "id": "box_5",
             "name": "box 5",
             "isVisible": true,
-            "description": "A wooden box.",
-            "clue": "Inside is a note: 'WINDOW code: 5555'.",
+            "description": "A wooden box. Inside is a note: 'WINDOW code: 5555'.",
             "x": 4,
             "y": 2,
             "status": "unexamined"
@@ -2073,8 +2049,7 @@
             "id": "book",
             "name": "book",
             "isVisible": true,
-            "description": "An old book lies in the corner.",
-            "clue": "To leave, you need a BRASS key. Try the boxes \u2014 only one holds it.",
+            "description": "An old book lies in the corner. To leave, you need a BRASS key. Try the boxes \u2014 only one holds it.",
             "x": 0,
             "y": 0
           },
@@ -2235,8 +2210,7 @@
             "id": "book",
             "name": "book",
             "isVisible": true,
-            "description": "An old book lies in the corner.",
-            "clue": "To leave, you need a BRASS key. Try the boxes \u2014 only one holds it.",
+            "description": "An old book lies in the corner. To leave, you need a BRASS key. Try the boxes \u2014 only one holds it.",
             "x": 0,
             "y": 0,
             "status": "examined"
@@ -2310,8 +2284,7 @@
             "id": "book",
             "name": "book",
             "isVisible": true,
-            "description": "An old book lies in the corner.",
-            "clue": "To leave, you need a BRASS key. Try the boxes \u2014 only one holds it.",
+            "description": "An old book lies in the corner. To leave, you need a BRASS key. Try the boxes \u2014 only one holds it.",
             "x": 0,
             "y": 0
           },
@@ -2472,8 +2445,7 @@
             "id": "book",
             "name": "book",
             "isVisible": true,
-            "description": "An old book lies in the corner.",
-            "clue": "To leave, you need a BRASS key. Try the boxes \u2014 only one holds it.",
+            "description": "An old book lies in the corner. To leave, you need a BRASS key. Try the boxes \u2014 only one holds it.",
             "x": 0,
             "y": 0,
             "status": "examined"
@@ -2547,8 +2519,7 @@
             "id": "book",
             "name": "book",
             "isVisible": true,
-            "description": "A worn notebook.",
-            "clue": "The door code is the first four even numbers, in order. Ignore any codes you find lying around \u2014 they are decoys.",
+            "description": "A worn notebook. The door code is the first four even numbers, in order. Ignore any codes you find lying around \u2014 they are decoys.",
             "x": 0,
             "y": 0
           },
@@ -2556,8 +2527,7 @@
             "id": "note",
             "name": "sticky note",
             "isVisible": true,
-            "description": "A sticky note on the wall.",
-            "clue": "code: 1234",
+            "description": "A sticky note on the wall. code: 1234",
             "x": 4,
             "y": 0
           },
@@ -2658,8 +2628,7 @@
             "id": "book",
             "name": "book",
             "isVisible": true,
-            "description": "A worn notebook.",
-            "clue": "The door code is the first four even numbers, in order. Ignore any codes you find lying around \u2014 they are decoys.",
+            "description": "A worn notebook. The door code is the first four even numbers, in order. Ignore any codes you find lying around \u2014 they are decoys.",
             "x": 0,
             "y": 0,
             "status": "examined"
@@ -2668,8 +2637,7 @@
             "id": "note",
             "name": "sticky note",
             "isVisible": true,
-            "description": "A sticky note on the wall.",
-            "clue": "code: 1234",
+            "description": "A sticky note on the wall. code: 1234",
             "x": 4,
             "y": 0,
             "status": "unexamined"
@@ -2719,8 +2687,7 @@
             "id": "book",
             "name": "book",
             "isVisible": true,
-            "description": "A worn notebook.",
-            "clue": "The door code is the first four even numbers, in order. Ignore any codes you find lying around \u2014 they are decoys.",
+            "description": "A worn notebook. The door code is the first four even numbers, in order. Ignore any codes you find lying around \u2014 they are decoys.",
             "x": 0,
             "y": 0
           },
@@ -2728,8 +2695,7 @@
             "id": "note",
             "name": "sticky note",
             "isVisible": true,
-            "description": "A sticky note on the wall.",
-            "clue": "code: 1234",
+            "description": "A sticky note on the wall. code: 1234",
             "x": 4,
             "y": 0
           },
@@ -2830,8 +2796,7 @@
             "id": "book",
             "name": "book",
             "isVisible": true,
-            "description": "A worn notebook.",
-            "clue": "The door code is the first four even numbers, in order. Ignore any codes you find lying around \u2014 they are decoys.",
+            "description": "A worn notebook. The door code is the first four even numbers, in order. Ignore any codes you find lying around \u2014 they are decoys.",
             "x": 0,
             "y": 0,
             "status": "examined"
@@ -2840,8 +2805,7 @@
             "id": "note",
             "name": "sticky note",
             "isVisible": true,
-            "description": "A sticky note on the wall.",
-            "clue": "code: 1234",
+            "description": "A sticky note on the wall. code: 1234",
             "x": 4,
             "y": 0,
             "status": "unexamined"
@@ -2891,8 +2855,7 @@
             "id": "book",
             "name": "book",
             "isVisible": true,
-            "description": "A worn notebook.",
-            "clue": "The door code is the first four even numbers, in order. Ignore any codes you find lying around \u2014 they are decoys.",
+            "description": "A worn notebook. The door code is the first four even numbers, in order. Ignore any codes you find lying around \u2014 they are decoys.",
             "x": 0,
             "y": 0
           },
@@ -2900,8 +2863,7 @@
             "id": "note",
             "name": "sticky note",
             "isVisible": true,
-            "description": "A sticky note on the wall.",
-            "clue": "code: 1234",
+            "description": "A sticky note on the wall. code: 1234",
             "x": 4,
             "y": 0
           },
@@ -3016,8 +2978,7 @@
             "id": "book",
             "name": "book",
             "isVisible": true,
-            "description": "A worn notebook.",
-            "clue": "The door code is the first four even numbers, in order. Ignore any codes you find lying around \u2014 they are decoys.",
+            "description": "A worn notebook. The door code is the first four even numbers, in order. Ignore any codes you find lying around \u2014 they are decoys.",
             "x": 0,
             "y": 0,
             "status": "examined"
@@ -3026,8 +2987,7 @@
             "id": "note",
             "name": "sticky note",
             "isVisible": true,
-            "description": "A sticky note on the wall.",
-            "clue": "code: 1234",
+            "description": "A sticky note on the wall. code: 1234",
             "x": 4,
             "y": 0,
             "status": "examined"
@@ -3077,8 +3037,7 @@
             "id": "book",
             "name": "book",
             "isVisible": true,
-            "description": "A worn notebook.",
-            "clue": "The door code is the first four even numbers, in order. Ignore any codes you find lying around \u2014 they are decoys.",
+            "description": "A worn notebook. The door code is the first four even numbers, in order. Ignore any codes you find lying around \u2014 they are decoys.",
             "x": 0,
             "y": 0
           },
@@ -3086,8 +3045,7 @@
             "id": "note",
             "name": "sticky note",
             "isVisible": true,
-            "description": "A sticky note on the wall.",
-            "clue": "code: 1234",
+            "description": "A sticky note on the wall. code: 1234",
             "x": 4,
             "y": 0
           },
@@ -3202,8 +3160,7 @@
             "id": "book",
             "name": "book",
             "isVisible": true,
-            "description": "A worn notebook.",
-            "clue": "The door code is the first four even numbers, in order. Ignore any codes you find lying around \u2014 they are decoys.",
+            "description": "A worn notebook. The door code is the first four even numbers, in order. Ignore any codes you find lying around \u2014 they are decoys.",
             "x": 0,
             "y": 0,
             "status": "examined"
@@ -3212,8 +3169,7 @@
             "id": "note",
             "name": "sticky note",
             "isVisible": true,
-            "description": "A sticky note on the wall.",
-            "clue": "code: 1234",
+            "description": "A sticky note on the wall. code: 1234",
             "x": 4,
             "y": 0,
             "status": "examined"
@@ -3263,8 +3219,7 @@
             "id": "book",
             "name": "book",
             "isVisible": true,
-            "description": "An old book.",
-            "clue": "Code: 1234",
+            "description": "An old book. Code: 1234",
             "x": 0,
             "y": 0
           },
@@ -3413,8 +3368,7 @@
             "id": "book",
             "name": "book",
             "isVisible": true,
-            "description": "An old book.",
-            "clue": "Code: 1234",
+            "description": "An old book. Code: 1234",
             "x": 0,
             "y": 0,
             "status": "examined"
@@ -3454,8 +3408,7 @@
             "id": "painting",
             "name": "painting",
             "isVisible": true,
-            "description": "A framed painting.",
-            "clue": "The 1st digit of the door code is 3.",
+            "description": "A framed painting. The 1st digit of the door code is 3.",
             "x": 0,
             "y": 0
           },
@@ -3463,8 +3416,7 @@
             "id": "clock",
             "name": "clock",
             "isVisible": true,
-            "description": "A wall clock.",
-            "clue": "The 2nd digit of the door code is 5.",
+            "description": "A wall clock. The 2nd digit of the door code is 5.",
             "x": 4,
             "y": 0
           },
@@ -3472,8 +3424,7 @@
             "id": "rug",
             "name": "rug",
             "isVisible": true,
-            "description": "A woven rug.",
-            "clue": "The 3rd digit of the door code is 2.",
+            "description": "A woven rug. The 3rd digit of the door code is 2.",
             "x": 1,
             "y": 2
           },
@@ -3481,8 +3432,7 @@
             "id": "vase",
             "name": "vase",
             "isVisible": true,
-            "description": "A ceramic vase.",
-            "clue": "The 4th digit of the door code is 4.",
+            "description": "A ceramic vase. The 4th digit of the door code is 4.",
             "x": 3,
             "y": 2
           },
@@ -3490,8 +3440,7 @@
             "id": "note",
             "name": "sticky note",
             "isVisible": true,
-            "description": "A sticky note.",
-            "clue": "code: 0000",
+            "description": "A sticky note. code: 0000",
             "x": 2,
             "y": 3
           }
@@ -3631,8 +3580,7 @@
             "id": "painting",
             "name": "painting",
             "isVisible": true,
-            "description": "A framed painting.",
-            "clue": "The 1st digit of the door code is 3.",
+            "description": "A framed painting. The 1st digit of the door code is 3.",
             "x": 0,
             "y": 0,
             "status": "examined"
@@ -3641,8 +3589,7 @@
             "id": "clock",
             "name": "clock",
             "isVisible": true,
-            "description": "A wall clock.",
-            "clue": "The 2nd digit of the door code is 5.",
+            "description": "A wall clock. The 2nd digit of the door code is 5.",
             "x": 4,
             "y": 0,
             "status": "examined"
@@ -3651,8 +3598,7 @@
             "id": "rug",
             "name": "rug",
             "isVisible": true,
-            "description": "A woven rug.",
-            "clue": "The 3rd digit of the door code is 2.",
+            "description": "A woven rug. The 3rd digit of the door code is 2.",
             "x": 1,
             "y": 2,
             "status": "examined"
@@ -3661,8 +3607,7 @@
             "id": "vase",
             "name": "vase",
             "isVisible": true,
-            "description": "A ceramic vase.",
-            "clue": "The 4th digit of the door code is 4.",
+            "description": "A ceramic vase. The 4th digit of the door code is 4.",
             "x": 3,
             "y": 2,
             "status": "examined"
@@ -3671,8 +3616,7 @@
             "id": "note",
             "name": "sticky note",
             "isVisible": true,
-            "description": "A sticky note.",
-            "clue": "code: 0000",
+            "description": "A sticky note. code: 0000",
             "x": 2,
             "y": 3,
             "status": "examined"
@@ -3703,8 +3647,7 @@
             "id": "painting",
             "name": "painting",
             "isVisible": true,
-            "description": "A framed painting.",
-            "clue": "The 1st digit of the door code is 3.",
+            "description": "A framed painting. The 1st digit of the door code is 3.",
             "x": 0,
             "y": 0
           },
@@ -3712,8 +3655,7 @@
             "id": "clock",
             "name": "clock",
             "isVisible": true,
-            "description": "A wall clock.",
-            "clue": "The 2nd digit of the door code is 5.",
+            "description": "A wall clock. The 2nd digit of the door code is 5.",
             "x": 4,
             "y": 0
           },
@@ -3721,8 +3663,7 @@
             "id": "rug",
             "name": "rug",
             "isVisible": true,
-            "description": "A woven rug.",
-            "clue": "The 3rd digit of the door code is 2.",
+            "description": "A woven rug. The 3rd digit of the door code is 2.",
             "x": 1,
             "y": 2
           },
@@ -3730,8 +3671,7 @@
             "id": "vase",
             "name": "vase",
             "isVisible": true,
-            "description": "A ceramic vase.",
-            "clue": "The 4th digit of the door code is 4.",
+            "description": "A ceramic vase. The 4th digit of the door code is 4.",
             "x": 3,
             "y": 2
           },
@@ -3739,8 +3679,7 @@
             "id": "note",
             "name": "sticky note",
             "isVisible": true,
-            "description": "A sticky note.",
-            "clue": "code: 0000",
+            "description": "A sticky note. code: 0000",
             "x": 2,
             "y": 3
           }
@@ -3880,8 +3819,7 @@
             "id": "painting",
             "name": "painting",
             "isVisible": true,
-            "description": "A framed painting.",
-            "clue": "The 1st digit of the door code is 3.",
+            "description": "A framed painting. The 1st digit of the door code is 3.",
             "x": 0,
             "y": 0,
             "status": "examined"
@@ -3890,8 +3828,7 @@
             "id": "clock",
             "name": "clock",
             "isVisible": true,
-            "description": "A wall clock.",
-            "clue": "The 2nd digit of the door code is 5.",
+            "description": "A wall clock. The 2nd digit of the door code is 5.",
             "x": 4,
             "y": 0,
             "status": "examined"
@@ -3900,8 +3837,7 @@
             "id": "rug",
             "name": "rug",
             "isVisible": true,
-            "description": "A woven rug.",
-            "clue": "The 3rd digit of the door code is 2.",
+            "description": "A woven rug. The 3rd digit of the door code is 2.",
             "x": 1,
             "y": 2,
             "status": "examined"
@@ -3910,8 +3846,7 @@
             "id": "vase",
             "name": "vase",
             "isVisible": true,
-            "description": "A ceramic vase.",
-            "clue": "The 4th digit of the door code is 4.",
+            "description": "A ceramic vase. The 4th digit of the door code is 4.",
             "x": 3,
             "y": 2,
             "status": "examined"
@@ -3920,8 +3855,7 @@
             "id": "note",
             "name": "sticky note",
             "isVisible": true,
-            "description": "A sticky note.",
-            "clue": "code: 0000",
+            "description": "A sticky note. code: 0000",
             "x": 2,
             "y": 3,
             "status": "examined"
@@ -3952,8 +3886,7 @@
             "id": "painting",
             "name": "painting",
             "isVisible": true,
-            "description": "A framed painting.",
-            "clue": "The 1st digit of the door code is 3.",
+            "description": "A framed painting. The 1st digit of the door code is 3.",
             "x": 0,
             "y": 0
           },
@@ -3961,8 +3894,7 @@
             "id": "clock",
             "name": "clock",
             "isVisible": true,
-            "description": "A wall clock.",
-            "clue": "The 2nd digit of the door code is 5.",
+            "description": "A wall clock. The 2nd digit of the door code is 5.",
             "x": 4,
             "y": 0
           },
@@ -3970,8 +3902,7 @@
             "id": "rug",
             "name": "rug",
             "isVisible": true,
-            "description": "A woven rug.",
-            "clue": "The 3rd digit of the door code is 2.",
+            "description": "A woven rug. The 3rd digit of the door code is 2.",
             "x": 1,
             "y": 2
           },
@@ -3979,8 +3910,7 @@
             "id": "vase",
             "name": "vase",
             "isVisible": true,
-            "description": "A ceramic vase.",
-            "clue": "The 4th digit of the door code is 4.",
+            "description": "A ceramic vase. The 4th digit of the door code is 4.",
             "x": 3,
             "y": 2
           },
@@ -3988,8 +3918,7 @@
             "id": "note",
             "name": "sticky note",
             "isVisible": true,
-            "description": "A sticky note.",
-            "clue": "code: 0000",
+            "description": "A sticky note. code: 0000",
             "x": 2,
             "y": 3
           }
@@ -4129,8 +4058,7 @@
             "id": "painting",
             "name": "painting",
             "isVisible": true,
-            "description": "A framed painting.",
-            "clue": "The 1st digit of the door code is 3.",
+            "description": "A framed painting. The 1st digit of the door code is 3.",
             "x": 0,
             "y": 0,
             "status": "examined"
@@ -4139,8 +4067,7 @@
             "id": "clock",
             "name": "clock",
             "isVisible": true,
-            "description": "A wall clock.",
-            "clue": "The 2nd digit of the door code is 5.",
+            "description": "A wall clock. The 2nd digit of the door code is 5.",
             "x": 4,
             "y": 0,
             "status": "examined"
@@ -4149,8 +4076,7 @@
             "id": "rug",
             "name": "rug",
             "isVisible": true,
-            "description": "A woven rug.",
-            "clue": "The 3rd digit of the door code is 2.",
+            "description": "A woven rug. The 3rd digit of the door code is 2.",
             "x": 1,
             "y": 2,
             "status": "examined"
@@ -4159,8 +4085,7 @@
             "id": "vase",
             "name": "vase",
             "isVisible": true,
-            "description": "A ceramic vase.",
-            "clue": "The 4th digit of the door code is 4.",
+            "description": "A ceramic vase. The 4th digit of the door code is 4.",
             "x": 3,
             "y": 2,
             "status": "examined"
@@ -4169,8 +4094,7 @@
             "id": "note",
             "name": "sticky note",
             "isVisible": true,
-            "description": "A sticky note.",
-            "clue": "code: 0000",
+            "description": "A sticky note. code: 0000",
             "x": 2,
             "y": 3,
             "status": "examined"
@@ -4201,8 +4125,7 @@
             "id": "painting",
             "name": "painting",
             "isVisible": true,
-            "description": "A framed painting.",
-            "clue": "The 1st digit of the door code is 3.",
+            "description": "A framed painting. The 1st digit of the door code is 3.",
             "x": 0,
             "y": 0
           },
@@ -4210,8 +4133,7 @@
             "id": "clock",
             "name": "clock",
             "isVisible": true,
-            "description": "A wall clock.",
-            "clue": "The 2nd digit of the door code is 5.",
+            "description": "A wall clock. The 2nd digit of the door code is 5.",
             "x": 4,
             "y": 0
           },
@@ -4219,8 +4141,7 @@
             "id": "rug",
             "name": "rug",
             "isVisible": true,
-            "description": "A woven rug.",
-            "clue": "The 3rd digit of the door code is 2.",
+            "description": "A woven rug. The 3rd digit of the door code is 2.",
             "x": 1,
             "y": 2
           },
@@ -4228,8 +4149,7 @@
             "id": "vase",
             "name": "vase",
             "isVisible": true,
-            "description": "A ceramic vase.",
-            "clue": "The 4th digit of the door code is 4.",
+            "description": "A ceramic vase. The 4th digit of the door code is 4.",
             "x": 3,
             "y": 2
           },
@@ -4237,8 +4157,7 @@
             "id": "note",
             "name": "sticky note",
             "isVisible": true,
-            "description": "A sticky note.",
-            "clue": "code: 0000",
+            "description": "A sticky note. code: 0000",
             "x": 2,
             "y": 3
           }
@@ -4378,8 +4297,7 @@
             "id": "painting",
             "name": "painting",
             "isVisible": true,
-            "description": "A framed painting.",
-            "clue": "The 1st digit of the door code is 3.",
+            "description": "A framed painting. The 1st digit of the door code is 3.",
             "x": 0,
             "y": 0,
             "status": "examined"
@@ -4388,8 +4306,7 @@
             "id": "clock",
             "name": "clock",
             "isVisible": true,
-            "description": "A wall clock.",
-            "clue": "The 2nd digit of the door code is 5.",
+            "description": "A wall clock. The 2nd digit of the door code is 5.",
             "x": 4,
             "y": 0,
             "status": "examined"
@@ -4398,8 +4315,7 @@
             "id": "rug",
             "name": "rug",
             "isVisible": true,
-            "description": "A woven rug.",
-            "clue": "The 3rd digit of the door code is 2.",
+            "description": "A woven rug. The 3rd digit of the door code is 2.",
             "x": 1,
             "y": 2,
             "status": "examined"
@@ -4408,8 +4324,7 @@
             "id": "vase",
             "name": "vase",
             "isVisible": true,
-            "description": "A ceramic vase.",
-            "clue": "The 4th digit of the door code is 4.",
+            "description": "A ceramic vase. The 4th digit of the door code is 4.",
             "x": 3,
             "y": 2,
             "status": "examined"
@@ -4418,8 +4333,7 @@
             "id": "note",
             "name": "sticky note",
             "isVisible": true,
-            "description": "A sticky note.",
-            "clue": "code: 0000",
+            "description": "A sticky note. code: 0000",
             "x": 2,
             "y": 3,
             "status": "examined"
@@ -4450,8 +4364,7 @@
             "id": "note",
             "name": "note",
             "isVisible": true,
-            "description": "A faded note.",
-            "clue": "This door only opens with the GOLDEN KEY. Nothing else will work.",
+            "description": "A faded note. This door only opens with the GOLDEN KEY. Nothing else will work.",
             "x": 0,
             "y": 0
           },
@@ -4756,8 +4669,7 @@
             "id": "note",
             "name": "note",
             "isVisible": true,
-            "description": "A faded note.",
-            "clue": "This door only opens with the GOLDEN KEY. Nothing else will work.",
+            "description": "A faded note. This door only opens with the GOLDEN KEY. Nothing else will work.",
             "x": 0,
             "y": 0,
             "status": "examined"
@@ -4829,8 +4741,7 @@
             "id": "note",
             "name": "note",
             "isVisible": true,
-            "description": "A faded note.",
-            "clue": "This door only opens with the GOLDEN KEY. Nothing else will work.",
+            "description": "A faded note. This door only opens with the GOLDEN KEY. Nothing else will work.",
             "x": 0,
             "y": 0
           },
@@ -5251,8 +5162,7 @@
             "id": "note",
             "name": "note",
             "isVisible": true,
-            "description": "A faded note.",
-            "clue": "This door only opens with the GOLDEN KEY. Nothing else will work.",
+            "description": "A faded note. This door only opens with the GOLDEN KEY. Nothing else will work.",
             "x": 0,
             "y": 0,
             "status": "examined"
@@ -5324,8 +5234,7 @@
             "id": "book",
             "name": "Book",
             "isVisible": true,
-            "description": "An old book.",
-            "clue": "Code: 1234",
+            "description": "An old book. Code: 1234",
             "x": 0,
             "y": 0
           }
@@ -5505,8 +5414,7 @@
             "id": "book",
             "name": "Book",
             "isVisible": true,
-            "description": "An old book.",
-            "clue": "Code: 1234",
+            "description": "An old book. Code: 1234",
             "x": 0,
             "y": 0,
             "status": "examined"
@@ -5537,8 +5445,7 @@
             "id": "book",
             "name": "Book",
             "isVisible": true,
-            "description": "An old book.",
-            "clue": "Code: 1234",
+            "description": "An old book. Code: 1234",
             "x": 0,
             "y": 0
           }
@@ -5704,8 +5611,7 @@
             "id": "book",
             "name": "Book",
             "isVisible": true,
-            "description": "An old book.",
-            "clue": "Code: 1234",
+            "description": "An old book. Code: 1234",
             "x": 0,
             "y": 0,
             "status": "examined"
@@ -5736,8 +5642,7 @@
             "id": "book",
             "name": "Book",
             "isVisible": true,
-            "description": "An old book.",
-            "clue": "Code: 1234",
+            "description": "An old book. Code: 1234",
             "x": 0,
             "y": 0
           }
@@ -5917,8 +5822,7 @@
             "id": "book",
             "name": "Book",
             "isVisible": true,
-            "description": "An old book.",
-            "clue": "Code: 1234",
+            "description": "An old book. Code: 1234",
             "x": 0,
             "y": 0,
             "status": "examined"
@@ -5949,8 +5853,7 @@
             "id": "book",
             "name": "Book",
             "isVisible": true,
-            "description": "An old book.",
-            "clue": "Code: 1234",
+            "description": "An old book. Code: 1234",
             "x": 0,
             "y": 0
           }
@@ -6116,8 +6019,7 @@
             "id": "book",
             "name": "Book",
             "isVisible": true,
-            "description": "An old book.",
-            "clue": "Code: 1234",
+            "description": "An old book. Code: 1234",
             "x": 0,
             "y": 0,
             "status": "examined"
@@ -6159,8 +6061,7 @@
             "id": "table_1",
             "name": "table 1",
             "isVisible": true,
-            "description": "A dusty wooden table.",
-            "clue": "Taped underneath is a sticky note that reads: 'Box Code: 4829'",
+            "description": "A dusty wooden table. Taped underneath is a sticky note that reads: 'Box Code: 4829'",
             "x": 3,
             "y": 2
           }
@@ -6285,8 +6186,7 @@
             "id": "table_1",
             "name": "table 1",
             "isVisible": true,
-            "description": "A dusty wooden table.",
-            "clue": "Taped underneath is a sticky note that reads: 'Box Code: 4829'",
+            "description": "A dusty wooden table. Taped underneath is a sticky note that reads: 'Box Code: 4829'",
             "x": 3,
             "y": 2,
             "status": "examined"
@@ -6330,8 +6230,7 @@
             "id": "table_1",
             "name": "table 1",
             "isVisible": true,
-            "description": "A dusty wooden table.",
-            "clue": "Taped underneath is a sticky note that reads: 'Box Code: 4829'",
+            "description": "A dusty wooden table. Taped underneath is a sticky note that reads: 'Box Code: 4829'",
             "x": 3,
             "y": 2
           }
@@ -6456,8 +6355,7 @@
             "id": "table_1",
             "name": "table 1",
             "isVisible": true,
-            "description": "A dusty wooden table.",
-            "clue": "Taped underneath is a sticky note that reads: 'Box Code: 4829'",
+            "description": "A dusty wooden table. Taped underneath is a sticky note that reads: 'Box Code: 4829'",
             "x": 3,
             "y": 2,
             "status": "examined"
@@ -6490,8 +6388,7 @@
             "id": "book",
             "name": "Book",
             "isVisible": true,
-            "description": "An old book.",
-            "clue": "Code: 1234",
+            "description": "An old book. Code: 1234",
             "x": 0,
             "y": 0
           }
@@ -6643,8 +6540,7 @@
             "id": "book",
             "name": "Book",
             "isVisible": true,
-            "description": "An old book.",
-            "clue": "Code: 1234",
+            "description": "An old book. Code: 1234",
             "x": 0,
             "y": 0,
             "status": "examined"
@@ -6675,8 +6571,7 @@
             "id": "book",
             "name": "Book",
             "isVisible": true,
-            "description": "An old book.",
-            "clue": "Code: 1234",
+            "description": "An old book. Code: 1234",
             "x": 0,
             "y": 0
           }
@@ -6815,8 +6710,7 @@
             "id": "book",
             "name": "Book",
             "isVisible": true,
-            "description": "An old book.",
-            "clue": "Code: 1234",
+            "description": "An old book. Code: 1234",
             "x": 0,
             "y": 0,
             "status": "examined"
@@ -6847,8 +6741,7 @@
             "id": "book",
             "name": "Book",
             "isVisible": true,
-            "description": "An old book.",
-            "clue": "Code: 1234",
+            "description": "An old book. Code: 1234",
             "x": 0,
             "y": 0
           }
@@ -6999,8 +6892,7 @@
             "id": "book",
             "name": "Book",
             "isVisible": true,
-            "description": "An old book.",
-            "clue": "Code: 1234",
+            "description": "An old book. Code: 1234",
             "x": 0,
             "y": 0,
             "status": "examined"
@@ -7031,8 +6923,7 @@
             "id": "book",
             "name": "Book",
             "isVisible": true,
-            "description": "An old book.",
-            "clue": "Code: 1234",
+            "description": "An old book. Code: 1234",
             "x": 0,
             "y": 0
           }
@@ -7183,8 +7074,7 @@
             "id": "book",
             "name": "Book",
             "isVisible": true,
-            "description": "An old book.",
-            "clue": "Code: 1234",
+            "description": "An old book. Code: 1234",
             "x": 0,
             "y": 0,
             "status": "examined"
@@ -7215,8 +7105,7 @@
             "id": "book",
             "name": "Book",
             "isVisible": true,
-            "description": "An old book.",
-            "clue": "Code: 1234",
+            "description": "An old book. Code: 1234",
             "x": 0,
             "y": 0
           }
@@ -7355,8 +7244,7 @@
             "id": "book",
             "name": "Book",
             "isVisible": true,
-            "description": "An old book.",
-            "clue": "Code: 1234",
+            "description": "An old book. Code: 1234",
             "x": 0,
             "y": 0,
             "status": "examined"
@@ -7387,8 +7275,7 @@
             "id": "book",
             "name": "Book",
             "isVisible": true,
-            "description": "An old book.",
-            "clue": "Code: 1234",
+            "description": "An old book. Code: 1234",
             "x": 0,
             "y": 0
           }
@@ -7527,8 +7414,7 @@
             "id": "book",
             "name": "Book",
             "isVisible": true,
-            "description": "An old book.",
-            "clue": "Code: 1234",
+            "description": "An old book. Code: 1234",
             "x": 0,
             "y": 0,
             "status": "examined"
@@ -7559,8 +7445,7 @@
             "id": "book",
             "name": "Book",
             "isVisible": true,
-            "description": "An old book.",
-            "clue": "Code: 1234",
+            "description": "An old book. Code: 1234",
             "x": 0,
             "y": 0
           }
@@ -7699,8 +7584,7 @@
             "id": "book",
             "name": "Book",
             "isVisible": true,
-            "description": "An old book.",
-            "clue": "Code: 1234",
+            "description": "An old book. Code: 1234",
             "x": 0,
             "y": 0,
             "status": "examined"
@@ -7731,8 +7615,7 @@
             "id": "book",
             "name": "Book",
             "isVisible": true,
-            "description": "An old book.",
-            "clue": "Code: 1234",
+            "description": "An old book. Code: 1234",
             "x": 0,
             "y": 0
           }
@@ -7871,8 +7754,7 @@
             "id": "book",
             "name": "Book",
             "isVisible": true,
-            "description": "An old book.",
-            "clue": "Code: 1234",
+            "description": "An old book. Code: 1234",
             "x": 0,
             "y": 0,
             "status": "examined"
@@ -7903,8 +7785,7 @@
             "id": "book",
             "name": "Book",
             "isVisible": true,
-            "description": "An old book.",
-            "clue": "Code: 1234",
+            "description": "An old book. Code: 1234",
             "x": 0,
             "y": 0
           }
@@ -8055,8 +7936,7 @@
             "id": "book",
             "name": "Book",
             "isVisible": true,
-            "description": "An old book.",
-            "clue": "Code: 1234",
+            "description": "An old book. Code: 1234",
             "x": 0,
             "y": 0,
             "status": "examined"
@@ -8098,8 +7978,7 @@
             "id": "table_1",
             "name": "table 1",
             "isVisible": true,
-            "description": "A dusty wooden table.",
-            "clue": "Taped underneath is a sticky note that reads: 'Box Code: 4829'",
+            "description": "A dusty wooden table. Taped underneath is a sticky note that reads: 'Box Code: 4829'",
             "x": 3,
             "y": 2
           }
@@ -8224,8 +8103,7 @@
             "id": "table_1",
             "name": "table 1",
             "isVisible": true,
-            "description": "A dusty wooden table.",
-            "clue": "Taped underneath is a sticky note that reads: 'Box Code: 4829'",
+            "description": "A dusty wooden table. Taped underneath is a sticky note that reads: 'Box Code: 4829'",
             "x": 3,
             "y": 2,
             "status": "examined"
@@ -8269,8 +8147,7 @@
             "id": "table_1",
             "name": "table 1",
             "isVisible": true,
-            "description": "A dusty wooden table.",
-            "clue": "Taped underneath is a sticky note that reads: 'Box Code: 4829'",
+            "description": "A dusty wooden table. Taped underneath is a sticky note that reads: 'Box Code: 4829'",
             "x": 3,
             "y": 2
           }
@@ -8395,8 +8272,7 @@
             "id": "table_1",
             "name": "table 1",
             "isVisible": true,
-            "description": "A dusty wooden table.",
-            "clue": "Taped underneath is a sticky note that reads: 'Box Code: 4829'",
+            "description": "A dusty wooden table. Taped underneath is a sticky note that reads: 'Box Code: 4829'",
             "x": 3,
             "y": 2,
             "status": "examined"
@@ -8440,8 +8316,7 @@
             "id": "table_1",
             "name": "table 1",
             "isVisible": true,
-            "description": "A dusty wooden table.",
-            "clue": "Taped underneath is a sticky note that reads: 'Box Code: 4829'",
+            "description": "A dusty wooden table. Taped underneath is a sticky note that reads: 'Box Code: 4829'",
             "x": 3,
             "y": 2
           }
@@ -8566,8 +8441,7 @@
             "id": "table_1",
             "name": "table 1",
             "isVisible": true,
-            "description": "A dusty wooden table.",
-            "clue": "Taped underneath is a sticky note that reads: 'Box Code: 4829'",
+            "description": "A dusty wooden table. Taped underneath is a sticky note that reads: 'Box Code: 4829'",
             "x": 3,
             "y": 2,
             "status": "examined"
@@ -8611,8 +8485,7 @@
             "id": "table_1",
             "name": "table 1",
             "isVisible": true,
-            "description": "A dusty wooden table.",
-            "clue": "Taped underneath is a sticky note that reads: 'Box Code: 4829'",
+            "description": "A dusty wooden table. Taped underneath is a sticky note that reads: 'Box Code: 4829'",
             "x": 3,
             "y": 2
           }
@@ -8737,8 +8610,7 @@
             "id": "table_1",
             "name": "table 1",
             "isVisible": true,
-            "description": "A dusty wooden table.",
-            "clue": "Taped underneath is a sticky note that reads: 'Box Code: 4829'",
+            "description": "A dusty wooden table. Taped underneath is a sticky note that reads: 'Box Code: 4829'",
             "x": 3,
             "y": 2,
             "status": "examined"
@@ -8782,8 +8654,7 @@
             "id": "table_1",
             "name": "table 1",
             "isVisible": true,
-            "description": "A dusty wooden table.",
-            "clue": "Taped underneath is a sticky note that reads: 'Box Code: 4829'",
+            "description": "A dusty wooden table. Taped underneath is a sticky note that reads: 'Box Code: 4829'",
             "x": 3,
             "y": 2
           }
@@ -8922,8 +8793,7 @@
             "id": "table_1",
             "name": "table 1",
             "isVisible": true,
-            "description": "A dusty wooden table.",
-            "clue": "Taped underneath is a sticky note that reads: 'Box Code: 4829'",
+            "description": "A dusty wooden table. Taped underneath is a sticky note that reads: 'Box Code: 4829'",
             "x": 3,
             "y": 2,
             "status": "examined"
@@ -8956,8 +8826,7 @@
             "id": "note",
             "name": "note",
             "isVisible": true,
-            "description": "A faded note.",
-            "clue": "This door only opens with the GOLDEN KEY. Nothing else will work.",
+            "description": "A faded note. This door only opens with the GOLDEN KEY. Nothing else will work.",
             "x": 0,
             "y": 0
           },
@@ -9306,8 +9175,7 @@
             "id": "note",
             "name": "note",
             "isVisible": true,
-            "description": "A faded note.",
-            "clue": "This door only opens with the GOLDEN KEY. Nothing else will work.",
+            "description": "A faded note. This door only opens with the GOLDEN KEY. Nothing else will work.",
             "x": 0,
             "y": 0,
             "status": "examined"
@@ -9390,8 +9258,7 @@
             "id": "table_1",
             "name": "table 1",
             "isVisible": true,
-            "description": "A dusty wooden table.",
-            "clue": "Taped underneath is a sticky note that reads: 'Box Code: 4829'",
+            "description": "A dusty wooden table. Taped underneath is a sticky note that reads: 'Box Code: 4829'",
             "x": 3,
             "y": 2
           }
@@ -9550,8 +9417,7 @@
             "id": "table_1",
             "name": "table 1",
             "isVisible": true,
-            "description": "A dusty wooden table.",
-            "clue": "Taped underneath is a sticky note that reads: 'Box Code: 4829'",
+            "description": "A dusty wooden table. Taped underneath is a sticky note that reads: 'Box Code: 4829'",
             "x": 3,
             "y": 2,
             "status": "examined",
@@ -9586,8 +9452,7 @@
             "id": "plaque",
             "name": "plaque",
             "isVisible": true,
-            "description": "A brass plaque bolted to the wall.",
-            "clue": "To open the vault, enter the atomic number of gold (Au). One wrong attempt and the mechanism seizes for good.",
+            "description": "A brass plaque bolted to the wall. To open the vault, enter the atomic number of gold (Au). One wrong attempt and the mechanism seizes for good.",
             "x": 0,
             "y": 0
           },
@@ -9595,8 +9460,7 @@
             "id": "periodic_table",
             "name": "periodic table",
             "isVisible": true,
-            "description": "A torn page from a chemistry textbook pinned to the wall. The precious-metals section is visible.",
-            "clue": "Au is listed at Group 11, Period 6. Someone has circled the number 11 in red ink.",
+            "description": "A torn page from a chemistry textbook pinned to the wall. The precious-metals section is visible. Au is listed at Group 11, Period 6. Someone has circled the number 11 in red ink.",
             "x": 4,
             "y": 0
           },
@@ -9693,8 +9557,7 @@
             "id": "plaque",
             "name": "plaque",
             "isVisible": true,
-            "description": "A brass plaque bolted to the wall.",
-            "clue": "To open the vault, enter the atomic number of gold (Au). One wrong attempt and the mechanism seizes for good.",
+            "description": "A brass plaque bolted to the wall. To open the vault, enter the atomic number of gold (Au). One wrong attempt and the mechanism seizes for good.",
             "x": 0,
             "y": 0,
             "status": "examined",
@@ -9704,8 +9567,7 @@
             "id": "periodic_table",
             "name": "periodic table",
             "isVisible": true,
-            "description": "A torn page from a chemistry textbook pinned to the wall. The precious-metals section is visible.",
-            "clue": "Au is listed at Group 11, Period 6. Someone has circled the number 11 in red ink.",
+            "description": "A torn page from a chemistry textbook pinned to the wall. The precious-metals section is visible. Au is listed at Group 11, Period 6. Someone has circled the number 11 in red ink.",
             "x": 4,
             "y": 0,
             "status": "unexamined",
@@ -9748,8 +9610,7 @@
             "id": "journal",
             "name": "journal",
             "isVisible": true,
-            "description": "A mountaineer's journal left on the floor.",
-            "clue": "To escape, enter the official height of Mount Everest above sea level in metres, as announced by Nepal and China in their 2020 joint survey. max 4 digits",
+            "description": "A mountaineer's journal left on the floor. To escape, enter the official height of Mount Everest above sea level in metres, as announced by Nepal and China in their 2020 joint survey. max 4 digits",
             "x": 0,
             "y": 0
           },
@@ -9757,8 +9618,7 @@
             "id": "atlas",
             "name": "atlas",
             "isVisible": true,
-            "description": "A torn page from an old geographic atlas.",
-            "clue": "Everest elevation \u2014 early rough estimate: 8,000 m (subject to resurvey). This figure predates modern satellite measurement.",
+            "description": "A torn page from an old geographic atlas. Everest elevation \u2014 early rough estimate: 8,000 m (subject to resurvey). This figure predates modern satellite measurement.",
             "x": 4,
             "y": 2
           },
@@ -9855,8 +9715,7 @@
             "id": "journal",
             "name": "journal",
             "isVisible": true,
-            "description": "A mountaineer's journal left on the floor.",
-            "clue": "To escape, enter the official height of Mount Everest above sea level in metres, as announced by Nepal and China in their 2020 joint survey. max 4 digits",
+            "description": "A mountaineer's journal left on the floor. To escape, enter the official height of Mount Everest above sea level in metres, as announced by Nepal and China in their 2020 joint survey. max 4 digits",
             "x": 0,
             "y": 0,
             "status": "examined",
@@ -9866,8 +9725,7 @@
             "id": "atlas",
             "name": "atlas",
             "isVisible": true,
-            "description": "A torn page from an old geographic atlas.",
-            "clue": "Everest elevation \u2014 early rough estimate: 8,000 m (subject to resurvey). This figure predates modern satellite measurement.",
+            "description": "A torn page from an old geographic atlas. Everest elevation \u2014 early rough estimate: 8,000 m (subject to resurvey). This figure predates modern satellite measurement.",
             "x": 4,
             "y": 2,
             "status": "unexamined",
@@ -9910,8 +9768,7 @@
             "id": "poster",
             "name": "poster",
             "isVisible": true,
-            "description": "A faded sports poster on the wall.",
-            "clue": "Lake Placid, 1980 Winter Olympics. USA vs Soviet Union, ice-hockey semifinal. 'Do you believe in miracles?' The code is the number of goals scored by the winning team.",
+            "description": "A faded sports poster on the wall. Lake Placid, 1980 Winter Olympics. USA vs Soviet Union, ice-hockey semifinal. 'Do you believe in miracles?' The code is the number of goals scored by the winning team.",
             "x": 0,
             "y": 0
           },
@@ -9919,8 +9776,7 @@
             "id": "scoreboard",
             "name": "scoreboard",
             "isVisible": true,
-            "description": "An old manual scoreboard hanging crookedly.",
-            "clue": "HOME (Soviet Union): 3 | AWAY (USA): the away score has been deliberately scratched out.",
+            "description": "An old manual scoreboard hanging crookedly. HOME (Soviet Union): 3 | AWAY (USA): the away score has been deliberately scratched out.",
             "x": 4,
             "y": 2
           },
@@ -10017,8 +9873,7 @@
             "id": "poster",
             "name": "poster",
             "isVisible": true,
-            "description": "A faded sports poster on the wall.",
-            "clue": "Lake Placid, 1980 Winter Olympics. USA vs Soviet Union, ice-hockey semifinal. 'Do you believe in miracles?' The code is the number of goals scored by the winning team.",
+            "description": "A faded sports poster on the wall. Lake Placid, 1980 Winter Olympics. USA vs Soviet Union, ice-hockey semifinal. 'Do you believe in miracles?' The code is the number of goals scored by the winning team.",
             "x": 0,
             "y": 0,
             "status": "examined",
@@ -10028,8 +9883,7 @@
             "id": "scoreboard",
             "name": "scoreboard",
             "isVisible": true,
-            "description": "An old manual scoreboard hanging crookedly.",
-            "clue": "HOME (Soviet Union): 3 | AWAY (USA): the away score has been deliberately scratched out.",
+            "description": "An old manual scoreboard hanging crookedly. HOME (Soviet Union): 3 | AWAY (USA): the away score has been deliberately scratched out.",
             "x": 4,
             "y": 2,
             "status": "unexamined",
@@ -10082,8 +9936,7 @@
             "id": "table_1",
             "name": "table 1",
             "isVisible": true,
-            "description": "A dusty wooden table.",
-            "clue": "Taped underneath is a sticky note that reads: 'Box Code: 4829'",
+            "description": "A dusty wooden table. Taped underneath is a sticky note that reads: 'Box Code: 4829'",
             "x": 3,
             "y": 2
           }
@@ -10223,8 +10076,7 @@
             "id": "table_1",
             "name": "table 1",
             "isVisible": true,
-            "description": "A dusty wooden table.",
-            "clue": "Taped underneath is a sticky note that reads: 'Box Code: 4829'",
+            "description": "A dusty wooden table. Taped underneath is a sticky note that reads: 'Box Code: 4829'",
             "x": 3,
             "y": 2,
             "status": "examined",
@@ -10269,8 +10121,7 @@
             "id": "table_1",
             "name": "table 1",
             "isVisible": true,
-            "description": "A dusty wooden table.",
-            "clue": "Taped underneath is a sticky note that reads: 'Box Code: 4829'",
+            "description": "A dusty wooden table. Taped underneath is a sticky note that reads: 'Box Code: 4829'",
             "x": 3,
             "y": 2
           }
@@ -10547,8 +10398,7 @@
             "id": "table_1",
             "name": "table 1",
             "isVisible": true,
-            "description": "A dusty wooden table.",
-            "clue": "Taped underneath is a sticky note that reads: 'Box Code: 4829'",
+            "description": "A dusty wooden table. Taped underneath is a sticky note that reads: 'Box Code: 4829'",
             "x": 3,
             "y": 2,
             "status": "examined",
@@ -10593,8 +10443,7 @@
             "id": "table_1",
             "name": "table 1",
             "isVisible": true,
-            "description": "A dusty wooden table.",
-            "clue": "Taped underneath is a sticky note that reads: 'Box Code: 4829'",
+            "description": "A dusty wooden table. Taped underneath is a sticky note that reads: 'Box Code: 4829'",
             "x": 3,
             "y": 2
           }
@@ -10838,8 +10687,7 @@
             "id": "table_1",
             "name": "table 1",
             "isVisible": true,
-            "description": "A dusty wooden table.",
-            "clue": "Taped underneath is a sticky note that reads: 'Box Code: 4829'",
+            "description": "A dusty wooden table. Taped underneath is a sticky note that reads: 'Box Code: 4829'",
             "x": 3,
             "y": 2,
             "status": "examined",

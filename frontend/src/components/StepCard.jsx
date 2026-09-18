@@ -109,6 +109,14 @@ export function StateDelta({ step }) {
     );
   }
 
+  if (!step.update) {
+    return (
+      <div className={`text-[11px] mt-1 ${step.solved ? "text-emerald-400" : "text-amber-400"}`}>
+        {step.solved ? "✓ state changed" : "✗ no state change — the agent must try something else"}
+      </div>
+    );
+  }
+
   if (!step.solved || !changed.length) {
     return (
       <div className="text-[11px] mt-1 text-amber-400">

@@ -1,13 +1,13 @@
 export const AGENT_ACTIONS = [
   { icon: "👁️", name: "look_around()", desc: "Survey the room — lists the names of every visible item. It does NOT say what is locked." },
-  { icon: "🔍", name: "investigate_item(name)", desc: "Read an item's description + clue. If it holds something and is unlocked, the agent takes it." },
+  { icon: "🔍", name: "investigate_item(name)", desc: "Read what an item says. If it holds something and is unlocked, the agent takes it." },
   { icon: "🖐️", name: "use_item_on_target(item, target)", desc: "Enter a code, or use a key from inventory, to unlock a target." },
   { icon: "🚪", name: "escape()", desc: "Try to leave. Works only once the exit door is unlocked." },
 ];
 
 export const EMPTY_ITEM = () => ({
   id: "", name: "", description: "", isVisible: true, isLocked: false,
-  codeRequired: "", keyRequired: "", holdsItem: "", clue: "", isExit: false,
+  codeRequired: "", keyRequired: "", holdsItem: "", isExit: false,
   maxAttempts: "", x: undefined, y: undefined,
 });
 
@@ -16,7 +16,6 @@ export function cleanItem(raw, index) {
     (raw.name || `item_${index + 1}`).trim().toLowerCase().replace(/\s+/g, "_");
   const item = { id, name: (raw.name || id).trim(), isVisible: raw.isVisible !== false };
   if (raw.description?.trim()) item.description = raw.description.trim();
-  if (raw.clue?.trim()) item.clue = raw.clue.trim();
   if (raw.codeRequired?.toString().trim()) item.codeRequired = raw.codeRequired.toString().trim();
   if (raw.keyRequired?.trim()) item.keyRequired = raw.keyRequired.trim();
   if (raw.holdsItem?.trim()) item.holdsItem = raw.holdsItem.trim();

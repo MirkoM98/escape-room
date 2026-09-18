@@ -22,8 +22,7 @@
             "id": "book",
             "name": "Book",
             "isVisible": true,
-            "description": "An old book.",
-            "clue": "Code: 1234",
+            "description": "An old book. Code: 1234",
             "x": 0,
             "y": 0
           }
@@ -63,8 +62,7 @@
             "id": "table_1",
             "name": "table 1",
             "isVisible": true,
-            "description": "A dusty wooden table.",
-            "clue": "Taped underneath is a sticky note that reads: 'Box Code: 4829'",
+            "description": "A dusty wooden table. Taped underneath is a sticky note that reads: 'Box Code: 4829'",
             "x": 3,
             "y": 2
           },

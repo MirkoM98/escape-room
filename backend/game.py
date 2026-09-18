@@ -131,13 +131,10 @@ class GameState:
 
         # NOTE: we deliberately do NOT reveal locked/unlocked here. The agent
         # only learns something is locked when it actually tries to open it.
-        parts = [item.get("description", "").strip()]
-        if item.get("clue"):
-            parts.append(item["clue"].strip())
-        # A passive object (a clue/furniture with no lock) becomes "examined".
+        text = (item.get("description") or "").strip()
+        # A passive object (furniture with no lock) becomes "examined".
         if item.get("status") == "unexamined":
             item["status"] = "examined"
-        text = " ".join(p for p in parts if p)
         return text or f"You inspect the {item['name']} but find nothing of note."
 
     def use_item_on_target(self, item_to_use: str, target_object: str) -> str:
