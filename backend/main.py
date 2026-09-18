@@ -29,7 +29,7 @@ Run it from the repository root:
 import json
 import os
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -128,6 +128,21 @@ def run(body: RunBody):
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+@app.get("/api/history")
+def list_history() -> dict:
+    """Run summaries, newest first. Shared across viewers when a database is configured."""
+    return store.list_runs()
+
+
+@app.get("/api/history/{num}")
+def get_history(num: int) -> dict:
+    """One full run, so a past run can be replayed."""
+    run = store.get_run(num)
+    if run is None:
+        raise HTTPException(status_code=404, detail="Run not found.")
+    return run
 
 
 @app.post("/api/history")

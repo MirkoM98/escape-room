@@ -51,3 +51,11 @@ export function archiveRun(record) {
     .then((r) => (r.ok ? r.json() : { saved: false }))
     .catch(() => ({ saved: false }));
 }
+
+export function fetchHistory() {
+  return getJson("/api/history").catch(() => ({ store: "none", runs: [] }));
+}
+
+export function fetchRun(num) {
+  return getJson(`/api/history/${num}`).catch(() => null);
+}

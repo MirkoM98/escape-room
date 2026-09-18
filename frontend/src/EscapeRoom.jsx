@@ -5,7 +5,7 @@ import { RoomMap } from "./components/RoomMap";
 import { StateObjectCard } from "./components/StateObjectCard";
 import { StepCard } from "./components/StepCard";
 import { Card, StatusBadge } from "./components/ui";
-import { archiveRun, getJson, streamRun } from "./lib/api";
+import { archiveRun, fetchHistory, fetchRun, getJson, streamRun } from "./lib/api";
 import { AGENT_START, GRID, assignPositions, freeCell, iconFor, norm, sleep } from "./lib/grid";
 import { KEYFRAMES } from "./lib/keyframes";
 import { AGENT_ACTIONS, EMPTY_ITEM, cleanItem } from "./lib/room";
@@ -14,6 +14,12 @@ import {
   listRuns, mergeRooms, revertRoom, saveRoomEdit,
 } from "./lib/storage";
 import { mergeIter } from "./lib/trace";
+
+const HISTORY_SOURCE = {
+  postgres: "every run, from everyone",
+  file: "every run recorded on this server",
+  none: "this browser only",
+};
 
 export default function EscapeRoom() {
   const [moveLimit, setMoveLimit] = useState(() => Number(localStorage.getItem("er_move_limit")) || 15);
@@ -38,6 +44,7 @@ export default function EscapeRoom() {
   const [roomName, setRoomName] = useState("Custom room");
   const [history, setHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [historyStore, setHistoryStore] = useState("none");
   // Presets (built-ins + user rooms) all live on the backend now, so edits are
   // permanent. Each carries `custom` and `edited` flags from the server.
   const [presets, setPresets] = useState([]);
@@ -190,9 +197,16 @@ export default function EscapeRoom() {
     archiveRun(record);
   };
 
-  const openHistory = () => {
-    setHistory(listRuns());
+  const openHistory = async () => {
     setShowHistory(true);
+    const data = await fetchHistory();
+    if (data.store && data.store !== "none") {
+      setHistoryStore(data.store);
+      setHistory((data.runs || []).map((r) => ({ ...r, shared: true })));
+      return;
+    }
+    setHistoryStore("none");
+    setHistory(listRuns().map((r) => ({ ...r, shared: false })));
   };
 
   const clearHistory = () => {
@@ -202,8 +216,8 @@ export default function EscapeRoom() {
   };
 
   // Load a past run: reload its room and replay its finished execution trace.
-  const loadHistoryEntry = (num) => {
-    const entry = getRun(num);
+  const loadHistoryEntry = async (summary) => {
+    const entry = summary.shared ? await fetchRun(summary.num) : getRun(summary.num);
     if (entry) {
         runIdRef.current++;
         abortRef.current?.abort();
@@ -841,17 +855,19 @@ export default function EscapeRoom() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setShowHistory(false)}>
           <div className="bg-slate-900 border border-slate-700 rounded-xl w-[560px] max-h-[70vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800">
-              <h2 className="text-sm font-semibold text-slate-200">🕘 Escaping History <span className="text-slate-500 font-normal">(click a run to replay it)</span></h2>
+              <h2 className="text-sm font-semibold text-slate-200">🕘 Escaping History <span className="text-slate-500 font-normal">({HISTORY_SOURCE[historyStore]} · click one to replay)</span></h2>
               <div className="flex items-center gap-3">
-                <button onClick={clearHistory} disabled={history.length === 0} title="Delete all history"
-                  className="text-xs px-2 py-1 rounded bg-red-600 hover:bg-red-500 text-white disabled:opacity-40">🗑️ Clear</button>
+                {historyStore === "none" && (
+                  <button onClick={clearHistory} disabled={history.length === 0} title="Delete all history"
+                    className="text-xs px-2 py-1 rounded bg-red-600 hover:bg-red-500 text-white disabled:opacity-40">🗑️ Clear</button>
+                )}
                 <button onClick={() => setShowHistory(false)} className="text-slate-400 hover:text-slate-200">✕</button>
               </div>
             </div>
             <div className="overflow-y-auto p-3 space-y-1">
               {history.length === 0 && <p className="text-xs text-slate-500">No runs yet — press “Start Escaping” to record one.</p>}
               {history.map((h) => (
-                <button key={h.num} onClick={() => loadHistoryEntry(h.num)}
+                <button key={h.num} onClick={() => loadHistoryEntry(h)}
                   className="w-full text-left text-xs px-3 py-2 rounded border border-slate-800 hover:bg-slate-800/60 hover:border-emerald-500/40">
                   <span className="text-sky-400 font-semibold">#{h.num}</span>
                   <span className="text-slate-400"> Room: </span>
@@ -860,6 +876,7 @@ export default function EscapeRoom() {
                   <span className={h.outcome === "Escaped" ? "text-emerald-400" : h.outcome === "Stuck" || h.outcome === "Out of moves" ? "text-red-400" : "text-sky-400"}>
                     {h.outcome}
                   </span>
+                  {h.moves ? <span className="text-slate-600"> · {h.moves} moves</span> : null}
                 </button>
               ))}
             </div>

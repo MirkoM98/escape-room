@@ -137,3 +137,84 @@ def save_run(record: dict) -> dict:
         except OSError as exc:
             return {"saved": False, "store": "file", "reason": str(exc)[:200]}
     return {"saved": False, "store": "none", "reason": "no writable store"}
+
+
+def _file_runs() -> list:
+    try:
+        with open(HISTORY_FILE) as f:
+            return json.load(f).get("runs", [])
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return []
+
+
+def list_runs(limit: int = 100) -> dict:
+    """Recent run summaries, newest first, from whichever tier is active."""
+    url = database_url()
+    if url:
+        try:
+            import psycopg
+
+            with psycopg.connect(url, connect_timeout=10) as conn:
+                ensure_schema(conn)
+                with conn.cursor() as cur:
+                    cur.execute(
+                        "SELECT id, room_name, outcome, moves, created_at"
+                        " FROM runs ORDER BY id DESC LIMIT %s",
+                        (limit,),
+                    )
+                    runs = [
+                        {
+                            "num": row[0],
+                            "room_name": row[1],
+                            "outcome": row[2],
+                            "moves": row[3],
+                            "created_at": row[4].isoformat(),
+                        }
+                        for row in cur.fetchall()
+                    ]
+            return {"store": "postgres", "runs": runs}
+        except Exception as exc:  # noqa: BLE001 — a listing failure must not break the UI
+            return {"store": "postgres", "runs": [], "reason": str(exc)[:200]}
+
+    runs = _file_runs()
+    summaries = [
+        {
+            "num": r.get("num"),
+            "room_name": r.get("room_name"),
+            "outcome": r.get("outcome"),
+            "moves": count_moves(r.get("steps") or []),
+        }
+        for r in runs[-limit:]
+    ]
+    summaries.reverse()
+    return {"store": "file" if runs else describe(), "runs": summaries}
+
+
+def get_run(num: int) -> dict | None:
+    """One full run, for replay."""
+    url = database_url()
+    if url:
+        try:
+            import psycopg
+
+            with psycopg.connect(url, connect_timeout=10) as conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        "SELECT id, room_name, outcome, room, steps, state FROM runs WHERE id = %s",
+                        (num,),
+                    )
+                    row = cur.fetchone()
+            if row is None:
+                return None
+            return {
+                "num": row[0],
+                "room_name": row[1],
+                "outcome": row[2],
+                "room": row[3],
+                "steps": row[4],
+                "state": row[5],
+            }
+        except Exception:  # noqa: BLE001
+            return None
+
+    return next((r for r in _file_runs() if r.get("num") == num), None)

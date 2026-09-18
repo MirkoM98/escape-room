@@ -139,9 +139,19 @@ Extras:
 - **✏️ Edit** a preset and **💾 Save** it; ↺ reverts a built-in to its original.
 - **🕘 History** — every run is replayable; **🗑️ Clear** wipes it.
 
-Rooms you create or edit, and your run history, are stored in the **browser's
-localStorage**, not on the server. The server only ships the ten built-in rooms
-and is otherwise stateless, which is what lets it run on a serverless host.
+Rooms you create or edit are stored in the **browser's localStorage**; the
+server only ships the ten built-in rooms.
+
+Run history is shared. `store.py` archives every finished run to the first tier
+that works: Postgres when a `DATABASE_URL` is set, `escaping-history.json` when
+the filesystem is writable, otherwise nowhere. The History panel reads that
+same tier, so on a deployment everyone sees every run, and falls back to this
+browser's own localStorage only when the server has no store at all. A failed
+archive never breaks a run.
+
+To attach a database on Vercel: `vercel install neon --plan free`. The `runs`
+table is created on first write. `python -m backend.import_history` copies an
+existing `escaping-history.json` across.
 
 ---
 
@@ -152,10 +162,13 @@ no per-user state and writes nothing to disk.
 
 | Method | Path | Purpose |
 |---|---|---|
-| GET  | `/api/health` | status, whether a key is set, whether the `claude` CLI is available |
+| GET  | `/api/health` | status, whether a key is set, and which archive tier is active |
 | GET  | `/api/default-room` | starter puzzle for the editor |
 | GET  | `/api/presets` | the built-in rooms |
 | POST | `/api/run` | **SSE** — run the agentic loop over the room in the request body |
+| GET  | `/api/history` | run summaries, newest first |
+| GET  | `/api/history/{num}` | one full run, for replay |
+| POST | `/api/history` | archive a finished run |
 
 `POST /api/run` takes `{room, move_limit, provider, model}` and streams one
 event per step. Because the room travels with the request there is no session
