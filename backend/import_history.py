@@ -3,9 +3,11 @@ One-off: copy escaping-history.json into the runs table.
 
 Runs recorded before the database existed live in the JSON file. This moves
 them across so the aggregate queries cover the whole history. Safe to re-run:
-each row carries the file's own run number in legacy_num, which is UNIQUE, so
-a second pass inserts nothing. Live runs leave legacy_num NULL, and Postgres
-permits many NULLs under a UNIQUE constraint.
+each row carries the file's own run number in legacy_num, which is UNIQUE, and
+already-present numbers are filtered out in Python before any INSERT is
+attempted. Doing it with ON CONFLICT DO NOTHING instead would still call
+nextval() for every rejected row, leaving a gap in the ids the UI shows.
+Live runs leave legacy_num NULL, which a UNIQUE constraint permits many of.
 
 Run it from the repository root with the database credentials in the
 environment (vercel env pull .env.local writes them):
@@ -37,12 +39,16 @@ def main() -> None:
     with psycopg.connect(url, connect_timeout=20) as conn:
         store.ensure_schema(conn)
         with conn.cursor() as cur:
+            cur.execute("SELECT legacy_num FROM runs WHERE legacy_num IS NOT NULL")
+            present = {row[0] for row in cur.fetchall()}
             for run in runs:
+                if run.get("num") in present:
+                    skipped += 1
+                    continue
                 steps = store.without_llm_payloads(run.get("steps") or [])
                 cur.execute(
                     "INSERT INTO runs (room_name, outcome, moves, room, steps, state, legacy_num)"
-                    " VALUES (%s, %s, %s, %s, %s, %s, %s)"
-                    " ON CONFLICT (legacy_num) DO NOTHING",
+                    " VALUES (%s, %s, %s, %s, %s, %s, %s)",
                     (
                         run.get("room_name") or "Custom room",
                         run.get("outcome") or "Ended",
@@ -53,10 +59,7 @@ def main() -> None:
                         run.get("num"),
                     ),
                 )
-                if cur.rowcount:
-                    inserted += 1
-                else:
-                    skipped += 1
+                inserted += 1
         conn.commit()
 
     print(f"inserted {inserted}, skipped {skipped} already present", file=sys.stderr)
