@@ -9,4 +9,5 @@ export const KEYFRAMES = `
 .er-bob{ animation:er-bob .7s ease-in-out infinite; }
 .er-dash{ animation:er-dash .6s linear infinite; }
 .er-flash{ animation:er-flash 1.2s ease-out; }
+.er-tile-label{ text-shadow: 0 1px 2px rgba(2,6,23,.95), 0 0 4px rgba(2,6,23,.85); }
 `;

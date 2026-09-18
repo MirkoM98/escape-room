@@ -1,10 +1,29 @@
-import React from "react";
+import React, { useState } from "react";
+
+import { IconPicker } from "./IconPicker";
 import { Field } from "./ui";
 
 export function ItemForm({ item, onField, disabled }) {
+  const [typing, setTyping] = useState(false);
+
   return (
     <div className="space-y-2">
-      <Field label="Name" value={item.name} onChange={(v) => onField("name", v)} disabled={disabled} placeholder="e.g. box 1" />
+      <div className="grid grid-cols-[auto_1fr] items-end gap-2">
+        <IconPicker
+          item={item}
+          onField={onField}
+          disabled={disabled}
+          suggestFor={typing && !item.icon ? item.name : ""}
+        />
+        <Field
+          label="Name"
+          value={item.name}
+          onChange={(v) => { setTyping(true); onField("name", v); }}
+          onBlur={() => setTyping(false)}
+          disabled={disabled}
+          placeholder="e.g. box 1"
+        />
+      </div>
       <label className="block">
         <span className="text-xs text-slate-500">What the agent reads when it investigates this</span>
         <textarea value={item.description} onChange={(e) => onField("description", e.target.value)}

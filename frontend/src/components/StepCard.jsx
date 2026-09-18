@@ -30,16 +30,16 @@ export function StepCard({ step }) {
   const hasDebug = !!(step.llmInput || step.llmOutput);
   return (
     <div className="rounded-lg border border-slate-800 bg-slate-950/60 p-3">
-      <div className="text-[11px] uppercase tracking-wide text-slate-500 mb-1">Iteration {step.n}</div>
+      <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Iteration {step.n}</div>
       {step.thought
-        ? <p className="italic text-slate-300 text-sm mb-2 whitespace-pre-wrap">💭 {step.thought}</p>
-        : <p className="italic text-slate-600 text-xs mb-2">(no thinking emitted this turn)</p>}
+        ? <p className="italic text-slate-200 text-sm leading-relaxed mb-2 whitespace-pre-wrap">💭 {step.thought}</p>
+        : <p className="italic text-slate-500 text-xs mb-2">(no thinking emitted this turn)</p>}
       {a && (
         <div className="mt-1 border-l-2 border-slate-700 pl-3">
           <div className="text-sm flex items-center gap-1.5">
             <span className="text-amber-400">▸ {a.tool}</span>
-            <span className="text-amber-200/70">({JSON.stringify(a.input || {})})</span>
-            {a.move ? <span className="text-slate-600 text-xs"> · move {a.move}</span> : null}
+            <span className="text-amber-200/90">({JSON.stringify(a.input || {})})</span>
+            {a.move ? <span className="text-slate-400 text-xs"> · move {a.move}</span> : null}
             {hasDebug && (
               <button onClick={() => setShowDebug((v) => !v)}
                 title="Show the exact LLM input & output for this turn"
@@ -71,7 +71,7 @@ export function StepCard({ step }) {
             </div>
           )}
           {step.result != null && (
-            <div className={`text-sm mt-1 whitespace-pre-wrap ${resultOk(step.result) ? "text-emerald-300" : "text-red-300"}`}>
+            <div className={`text-sm mt-1.5 leading-relaxed whitespace-pre-wrap ${resultOk(step.result) ? "text-emerald-300" : "text-rose-300"}`}>
               ↳ {step.result}
             </div>
           )}
@@ -103,7 +103,7 @@ export function StateDelta({ step }) {
 
   if (step.jammed) {
     return (
-      <div className="text-[11px] mt-1 text-rose-300">
+      <div className="text-xs mt-1.5 text-rose-300">
         ⛔ {name ? `${name} ` : ""}jammed permanently — it can never be opened again
       </div>
     );
@@ -111,7 +111,7 @@ export function StateDelta({ step }) {
 
   if (!step.update) {
     return (
-      <div className={`text-[11px] mt-1 ${step.solved ? "text-emerald-400" : "text-amber-400"}`}>
+      <div className={`text-xs mt-1.5 ${step.solved ? "text-emerald-400" : "text-amber-400"}`}>
         {step.solved ? "✓ state changed" : "✗ no state change — the agent must try something else"}
       </div>
     );
@@ -119,14 +119,14 @@ export function StateDelta({ step }) {
 
   if (!step.solved || !changed.length) {
     return (
-      <div className="text-[11px] mt-1 text-amber-400">
+      <div className="text-xs mt-1.5 text-amber-400">
         ✗ nothing changed{name ? ` on ${name}` : ""} — the agent must try something else
       </div>
     );
   }
 
   return (
-    <div className="text-[11px] mt-1 text-emerald-400">
+    <div className="text-xs mt-1.5 text-emerald-400">
       <span>✓ {name ? `${name}: ` : "changed: "}</span>
       {changed.map((field, i) => (
         <span key={field}>

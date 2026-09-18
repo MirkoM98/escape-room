@@ -31,7 +31,10 @@ export default function EscapeRoom() {
   const [leftWidth, setLeftWidth] = useState(() => Number(localStorage.getItem("er_left_w")) || 40);
   const [isWide, setIsWide] = useState(true);
   const [leftCollapsed, setLeftCollapsed] = useState(() => localStorage.getItem("er_left_collapsed") === "1");
-  const [loop, setLoop] = useState(() => localStorage.getItem("er_loop") === "1");
+  const collapseLeft = (next) => {
+    setLeftCollapsed(next);
+    localStorage.setItem("er_left_collapsed", next ? "1" : "0");
+  };
   const [items, setItems] = useState([]);
   const [liveState, setLiveState] = useState({ items: [], inventory: [], escaped: false });
   const [steps, setSteps] = useState([]);
@@ -45,6 +48,7 @@ export default function EscapeRoom() {
   const [history, setHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
   const [historyStore, setHistoryStore] = useState("none");
+  const [historyLoading, setHistoryLoading] = useState(false);
   // Presets (built-ins + user rooms) all live on the backend now, so edits are
   // permanent. Each carries `custom` and `edited` flags from the server.
   const [presets, setPresets] = useState([]);
@@ -69,8 +73,6 @@ export default function EscapeRoom() {
   const queueRef = useRef([]);
   const drainingRef = useRef(false);
   const runIdRef = useRef(0);
-  const loopRef = useRef(loop);
-  const loopTimerRef = useRef(null);
   const splitRef = useRef(null);
   const leftWidthRef = useRef(leftWidth);
 
@@ -113,7 +115,6 @@ export default function EscapeRoom() {
     window.addEventListener("mouseup", up);
   };
   useEffect(() => { roomNameRef.current = roomName; }, [roomName]);
-  useEffect(() => { loopRef.current = loop; }, [loop]);
 
   const confettiPieces = useMemo(
     () => Array.from({ length: 44 }).map((_, i) => ({
@@ -149,18 +150,8 @@ export default function EscapeRoom() {
       })
       .catch(() => setError("Could not reach the backend at /api. Is the server running on :8000?"));
     refreshPresets();
-    return () => { abortRef.current?.abort(); clearTimeout(loopTimerRef.current); };
+    return () => { abortRef.current?.abort(); };
   }, []);
-
-  // Loop mode: after a run finishes, automatically start the next one.
-  const toggleLoop = () => {
-    const next = !loop;
-    setLoop(next);
-    loopRef.current = next;
-    localStorage.setItem("er_loop", next ? "1" : "0");
-    if (next && !isRunning) start();
-    if (!next) { clearTimeout(loopTimerRef.current); loopTimerRef.current = null; }
-  };
 
   const refreshPresets = () =>
     getJson("/api/presets")
@@ -199,7 +190,9 @@ export default function EscapeRoom() {
 
   const openHistory = async () => {
     setShowHistory(true);
+    setHistoryLoading(true);
     const data = await fetchHistory();
+    setHistoryLoading(false);
     if (data.store && data.store !== "none") {
       setHistoryStore(data.store);
       setHistory((data.runs || []).map((r) => ({ ...r, shared: true })));
@@ -227,6 +220,7 @@ export default function EscapeRoom() {
         setItems(seeded);
         setLiveState(entry.state || { items: seeded.map(cleanItem), inventory: [], escaped: false });
         setSteps(entry.steps || []);
+        setMoves({ used: (entry.steps || []).filter((s) => s.action).length, limit: moveLimit });
         setLastUpdate(null);
         setSelectedIndex(null);
         setRoomName(entry.room_name || "Room");
@@ -344,8 +338,14 @@ export default function EscapeRoom() {
   };
 
   // Add an item at a specific grid cell (clicked on the map) and select it.
+  const selectItem = (index) => {
+    setSelectedIndex(index);
+    if (leftCollapsed) collapseLeft(false);
+  };
+
   const addItemAt = (x, y) => {
     markCustom();
+    if (leftCollapsed) collapseLeft(false);
     setItems((prev) => {
       const next = [...prev, { ...EMPTY_ITEM(), x, y }];
       setSelectedIndex(next.length - 1);
@@ -529,11 +529,6 @@ export default function EscapeRoom() {
         setSteps((prev) => [...prev, { done: event.reason, text: event.text }]);
         // Log this finished run to history (room + full trace + outcome).
         saveRun([...stepsRef.current, { done: event.reason, text: event.text }], event.reason, event.state);
-        // Loop mode: chain into the next run once the animations settle.
-        if (loopRef.current && alive()) {
-          clearTimeout(loopTimerRef.current);
-          loopTimerRef.current = setTimeout(() => { if (loopRef.current) start(); }, 1800);
-        }
         break;
 
       case "error":
@@ -571,9 +566,6 @@ export default function EscapeRoom() {
     doneRef.current = false;
     queueRef.current = [];
     drainingRef.current = false;
-    // Cancel any pending loop restart (start() calls reset(true), which is fine
-    // because start reschedules only after the next run finishes).
-    if (!keepConfigOnly) clearTimeout(loopTimerRef.current);
     setSteps([]);
     setError("");
     setLastUpdate(null);
@@ -656,7 +648,7 @@ export default function EscapeRoom() {
               <ItemForm item={items[selectedIndex]} disabled={isRunning}
                 onField={(field, value) => updateItem(selectedIndex, field, value)} />
             ) : (
-              <p className="text-xs text-slate-500 leading-relaxed">
+              <p className="text-xs text-slate-400 leading-relaxed">
                 Click a <span className="text-emerald-400 font-bold">+</span> tile on the room grid to add an item, or click an
                 existing item to edit it here. Build a chain: a clue points to a code/key → that opens a container → the
                 container holds the next key → until the exit door opens.
@@ -665,8 +657,8 @@ export default function EscapeRoom() {
           </Card>
 
           {/* World State — moved under the Item Editor (left column) */}
-          <Card title="🗃️ World State (JSON) — updates object-by-object each iteration">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Card title="🗃️ World State (JSON)">
+            <div className="grid grid-cols-1 gap-3">
               {liveState.items.map((it) => (
                 <StateObjectCard key={it.id} item={it} update={lastUpdate?.target === it.id ? lastUpdate : null} />
               ))}
@@ -682,7 +674,7 @@ export default function EscapeRoom() {
             )}
             <button
               onMouseDown={(e) => e.stopPropagation()}
-              onClick={() => setLeftCollapsed((c) => { const n = !c; localStorage.setItem("er_left_collapsed", n ? "1" : "0"); return n; })}
+              onClick={() => collapseLeft(!leftCollapsed)}
               title={leftCollapsed ? "Show the left panel" : "Collapse the left panel — show only the room"}
               className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 w-5 h-9 flex items-center justify-center rounded bg-slate-800 border border-slate-600 text-slate-300 hover:bg-emerald-600 hover:text-white hover:border-emerald-500 text-[11px] leading-none shadow">
               {leftCollapsed ? "▶" : "◀"}
@@ -740,7 +732,7 @@ export default function EscapeRoom() {
 
             {/* Short description of the selected room, so you know what it tests */}
             {selectedPreset?.description && !editingId && (
-              <p className="text-[11px] text-slate-500 mt-1.5 leading-relaxed">{selectedPreset.description}</p>
+              <p className="text-xs text-slate-400 mt-2 leading-relaxed">{selectedPreset.description}</p>
             )}
 
             {editingId && (
@@ -761,10 +753,6 @@ export default function EscapeRoom() {
             <button onClick={start} disabled={isRunning || items.length === 0}
               className="px-4 py-2 rounded bg-emerald-600 hover:bg-emerald-500 text-sm font-semibold disabled:opacity-40">▶ Start Escaping</button>
             <button onClick={() => reset(false)} className="px-4 py-2 rounded bg-red-600 hover:bg-red-500 text-sm font-semibold">↺ Reset Game</button>
-            <button onClick={toggleLoop} title="Keep starting a new run automatically after each one finishes"
-              className={`px-4 py-2 rounded text-sm font-semibold border ${loop ? "bg-sky-600 hover:bg-sky-500 border-sky-400 text-white" : "bg-slate-800 hover:bg-slate-700 border-slate-600 text-slate-300"}`}>
-              🔁 Loop{loop ? " ON" : " OFF"}
-            </button>
             <label className="flex items-center gap-1.5 text-xs text-slate-400"
               title="How the backend reaches Claude: auto (API key, else CLI) · api (needs ANTHROPIC_API_KEY) · cli (local Claude Code login, no key)">
               <span>Claude via</span>
@@ -784,7 +772,6 @@ export default function EscapeRoom() {
               {provider === "cli" && <span className="text-[10px] text-amber-400" title="Each move spawns a fresh `claude -p` process">~7s/move</span>}
             </label>
             <div className="ml-auto flex items-center gap-4 text-xs">
-              {loop && <span className="text-sky-400 animate-pulse">looping…</span>}
               {isRunning && <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />}
               <span className="text-slate-300">iteration: <span className="text-sky-400">{currentStep}</span></span>
               <span className="text-slate-300">moves: <span className="text-emerald-400">{moves.used}</span> / {moves.limit}</span>
@@ -807,10 +794,11 @@ export default function EscapeRoom() {
                 editable={!isRunning}
                 selectedIndex={selectedIndex}
                 onAddCell={addItemAt}
-                onSelectItem={setSelectedIndex}
+                onSelectItem={selectItem}
                 moveLimit={moveLimit}
                 onMoveLimit={setMoveLimit}
                 maxMoveLimit={maxMoveLimit}
+                showAgent={status !== "Idle"}
               />
 
               {/* Live State — moved directly under the map */}
@@ -818,15 +806,15 @@ export default function EscapeRoom() {
                 <div className="space-y-1">
                   {liveState.items.map((it) => (
                     <div key={it.id} className="flex items-center justify-between text-sm border-b border-slate-800/60 py-1">
-                      <span className="text-slate-200">{iconFor(it)} {it.name}</span>
+                      <span className="text-slate-100 font-medium">{iconFor(it)} {it.name}</span>
                       <StatusBadge status={it.status} />
                     </div>
                   ))}
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {liveState.inventory.length ? liveState.inventory.map((inv) => (
-                    <span key={inv} className="px-2 py-1 rounded bg-indigo-500/20 text-indigo-300 text-xs border border-indigo-500/40">🎒 {inv}</span>
-                  )) : <span className="text-xs text-slate-600">inventory empty</span>}
+                    <span key={inv} className="px-2.5 py-1 rounded-md bg-indigo-500/20 text-indigo-200 text-xs font-medium border border-indigo-500/50">🎒 {inv}</span>
+                  )) : <span className="text-xs text-slate-500">inventory empty</span>}
                 </div>
               </Card>
             </div>
@@ -835,7 +823,7 @@ export default function EscapeRoom() {
               <Card title="🧠 Execution Trace (thought → action → result)">
                 <div className="relative">
                   <div ref={traceRef} onScroll={onTraceScroll} className="max-h-[520px] overflow-y-auto pr-1 space-y-3">
-                    {steps.length === 0 && <p className="text-xs text-slate-500">No steps yet. Press “Start Escaping”.</p>}
+                    {steps.length === 0 && <p className="text-sm text-slate-400">No steps yet. Press “Start Escaping”.</p>}
                     {steps.map((s, i) => <StepCard key={i} step={s} />)}
                   </div>
                   {showScrollBtn && (
@@ -865,7 +853,14 @@ export default function EscapeRoom() {
               </div>
             </div>
             <div className="overflow-y-auto p-3 space-y-1">
-              {history.length === 0 && <p className="text-xs text-slate-500">No runs yet — press “Start Escaping” to record one.</p>}
+              {historyLoading ? (
+                <div className="flex items-center gap-2 px-3 py-6 text-xs text-slate-400">
+                  <span className="w-3.5 h-3.5 rounded-full border-2 border-slate-600 border-t-emerald-400 animate-spin" />
+                  Loading runs…
+                </div>
+              ) : history.length === 0 ? (
+                <p className="text-xs text-slate-500">No runs yet — press “Start Escaping” to record one.</p>
+              ) : null}
               {history.map((h) => (
                 <button key={h.num} onClick={() => loadHistoryEntry(h)}
                   className="w-full text-left text-xs px-3 py-2 rounded border border-slate-800 hover:bg-slate-800/60 hover:border-emerald-500/40">

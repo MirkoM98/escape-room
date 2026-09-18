@@ -7,7 +7,7 @@ export const AGENT_ACTIONS = [
 
 export const EMPTY_ITEM = () => ({
   id: "", name: "", description: "", isVisible: true, isLocked: false,
-  codeRequired: "", keyRequired: "", holdsItem: "", isExit: false,
+  codeRequired: "", keyRequired: "", holdsItem: "", icon: "", isExit: false,
   maxAttempts: "", x: undefined, y: undefined,
 });
 
@@ -16,6 +16,7 @@ export function cleanItem(raw, index) {
     (raw.name || `item_${index + 1}`).trim().toLowerCase().replace(/\s+/g, "_");
   const item = { id, name: (raw.name || id).trim(), isVisible: raw.isVisible !== false };
   if (raw.description?.trim()) item.description = raw.description.trim();
+  if (raw.icon?.trim()) item.icon = raw.icon.trim();
   if (raw.codeRequired?.toString().trim()) item.codeRequired = raw.codeRequired.toString().trim();
   if (raw.keyRequired?.trim()) item.keyRequired = raw.keyRequired.trim();
   if (raw.holdsItem?.trim()) item.holdsItem = raw.holdsItem.trim();

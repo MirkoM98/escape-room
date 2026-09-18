@@ -22,14 +22,14 @@ export function StateObjectCard({ item, update }) {
       className={`rounded-lg border p-2.5 bg-slate-950/60 ${changed ? "border-emerald-500 er-flash" : "border-slate-800"}`}
     >
       <div className="flex items-center justify-between mb-1">
-        <span className="text-sm text-slate-200">{iconFor(item)} {item.name}</span>
+        <span className="text-sm font-semibold text-slate-100">{iconFor(item)} {item.name}</span>
         <StatusBadge status={item.status} />
       </div>
-      <pre className="text-[11px] text-emerald-200/80 bg-black/40 rounded p-2 overflow-x-auto">
+      <pre className="text-xs leading-relaxed text-emerald-200 bg-black/40 rounded p-2.5 overflow-x-auto">
 {JSON.stringify(apiJson(item), null, 2)}
       </pre>
       {changed && update.changed?.length > 0 && (
-        <div className="mt-1.5 text-[11px] space-y-0.5">
+        <div className="mt-2 text-xs space-y-0.5">
           {update.changed.map((f) => (
             <div key={f} className="text-slate-400">
               <span className="text-slate-300">{f}:</span>{" "}
