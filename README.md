@@ -18,7 +18,7 @@ git clone <this-repo-url>
 cd escape-room
 
 # 1) install deps
-cd backend && pip install -r requirements.txt && cd ..   # anthropic, fastapi, uvicorn
+pip install -r requirements.txt                          # anthropic, fastapi, uvicorn
 #   (the frontend's npm install runs automatically on first ./start.sh)
 
 # 2) give the backend an Anthropic API key (see "The API key" below)
@@ -95,12 +95,11 @@ Note: `has_api_key: true` only means a key is *present*. If runs fail with
 
 ## Run it manually (two terminals) — alternative to `./start.sh`
 
-**Terminal 1 — backend**
+**Terminal 1 — backend** (from the repository root)
 ```bash
-cd backend
 pip install -r requirements.txt          # anthropic, fastapi, uvicorn
-export ANTHROPIC_API_KEY=sk-ant-...       # or rely on backend/.env
-uvicorn main:app --reload --port 8000
+export ANTHROPIC_API_KEY=sk-ant-...      # or rely on backend/.env
+uvicorn backend.main:app --reload --port 8000
 ```
 
 **Terminal 2 — frontend**
@@ -118,9 +117,10 @@ same-origin (no CORS, SSE just works).
 ## 3. Play
 
 1. Open http://localhost:5173.
-2. Load a **preset room** (Classic, Five keys, Hinted keys/codes, Reasoning,
-   Non-deterministic, Non-systemic, Dead-end), or build your own on the grid:
-   click a `+` tile to add an item, click an item to edit it.
+2. Pick a **preset room** from the dropdown (Classic, Five keys, Hinted keys,
+   Atomic Vault, Miracle on Ice, Summit Code, First Footstep, Reasoning,
+   One-shot lock, Dead end), or build your own on the grid: click a `+` tile to
+   add an item, click an item to edit it.
 3. Hit **▶ Start Escaping** and watch:
    - the **map** — the agent (🤖) walks to objects and acts,
    - the **execution trace** — each iteration as thought → action → result,
@@ -130,31 +130,61 @@ same-origin (no CORS, SSE just works).
 
 Extras:
 - **🔁 Loop** — keep auto-starting a new run after each one finishes.
-- **✏️ Edit** a preset and **💾 Save** it (persisted on the backend); ↺ reverts.
-- **🕘 History** — every run is saved and can be replayed; **🗑️ Clear** wipes it.
+- **✏️ Edit** a preset and **💾 Save** it; ↺ reverts a built-in to its original.
+- **🕘 History** — every run is replayable; **🗑️ Clear** wipes it.
+
+Rooms you create or edit, and your run history, are stored in the **browser's
+localStorage**, not on the server. The server only ships the ten built-in rooms
+and is otherwise stateless, which is what lets it run on a serverless host.
 
 ---
 
 ## API surface
 
+Four endpoints, all of them read-only except the run itself. The server keeps
+no per-user state and writes nothing to disk.
+
 | Method | Path | Purpose |
 |---|---|---|
-| GET  | `/api/health` | status + whether a key is set |
+| GET  | `/api/health` | status, whether a key is set, whether the `claude` CLI is available |
 | GET  | `/api/default-room` | starter puzzle for the editor |
-| GET  | `/api/presets` | preset rooms (built-in + user, with edits applied) |
-| POST | `/api/presets` | create a user room |
-| PUT  | `/api/presets/{id}` | save edits to a room |
-| DELETE | `/api/presets/{id}` | delete a user room / revert a built-in |
-| POST | `/api/session` | create a session from a room config (body accepts `provider`: `auto`/`api`/`cli`, `model`, `move_limit`) |
-| GET  | `/api/session/{id}/state` | current room snapshot |
-| GET  | `/api/session/{id}/run` | **SSE** — run the agentic loop |
-| POST | `/api/session/{id}/actions/{tool}` | run one tool manually (look_around, investigate_item, use_item_on_target, escape) |
-| GET / POST | `/api/history` | list / append run history |
-| DELETE | `/api/history` | clear all history |
-| GET  | `/api/history/{num}` | full record of one run (for replay) |
+| GET  | `/api/presets` | the built-in rooms |
+| POST | `/api/run` | **SSE** — run the agentic loop over the room in the request body |
 
-The action endpoints let you drive the room by hand or test tools in isolation —
-the agentic loop calls the same underlying `game.py` logic.
+`POST /api/run` takes `{room, move_limit, provider, model}` and streams one
+event per step. Because the room travels with the request there is no session
+to create and nothing to clean up.
+
+---
+
+## Deploying to Vercel
+
+The backend is stateless and writes nothing to disk, so the whole app deploys
+as a single Vercel Function that also serves the React build.
+
+What is already wired up:
+
+- `pyproject.toml` declares the dependencies and `[tool.vercel] entrypoint = "backend.main:app"`.
+- `[tool.vercel.scripts] build` runs `build_frontend.py`, which does `npm ci && npm run build`.
+- `backend/main.py` mounts `frontend/dist` with `app.frontend()` when that directory exists.
+- `vercel.json` raises the function's `maxDuration` to 300s (a 40-move run is well inside that)
+  and keeps the old run-history JSON out of the bundle.
+
+Set these environment variables in the Vercel project:
+
+| Variable | Why |
+|---|---|
+| `ANTHROPIC_API_KEY` | required. Server-side only — never give it a `VITE_` prefix, or it lands in the browser bundle. |
+| `ESCAPE_ROOM_PROVIDER=api` | pins the provider. The `cli` provider shells out to a local `claude` binary that does not exist on Vercel, and this also stops a caller asking for it. |
+
+**Before you make the URL public**, know that `POST /api/run` has no
+authentication: anyone who has the link can spend your Anthropic credits, up to
+40 model calls per request. Put Vercel's Deployment Protection (password) in
+front of it, or keep the URL private. A token baked into the frontend bundle
+would not help, since the browser has to send it anyway.
+
+This configuration follows Vercel's documented zero-config FastAPI path but has
+not been run against a real deployment yet.
 
 ---
 
@@ -163,12 +193,23 @@ the agentic loop calls the same underlying `game.py` logic.
 ```
 backend/
   skill.py       SYSTEM_PROMPT + tool JSON schemas (what the model sees)
+  rooms.py       the default puzzle + the ten preset rooms (pure data)
   game.py        GameState + tool logic (deterministic world engine)
   agent.py       the agentic loop (Anthropic SDK) — yields events
-  main.py        FastAPI endpoints (session, SSE run, presets, history)
+  main.py        FastAPI: health, rooms, and the SSE run endpoint
   prove_nondeterminism.py   sends identical input N times to show varied choices
-frontend/
-  src/EscapeRoom.jsx   the whole dashboard (grid editor, map, trace, state)
+frontend/src/
+  EscapeRoom.jsx        the dashboard composition root
+  lib/grid.js           grid maths, icons, item placement
+  lib/room.js           the item shape the backend expects
+  lib/api.js            fetch helpers + the streaming run reader
+  lib/storage.js        localStorage for your rooms and run history
+  lib/trace.js          one trace entry per loop iteration
+  lib/keyframes.js      the map animations
+  components/           RoomMap, StepCard, StateObjectCard, ItemForm, ui
+vercel.json            function duration for the deployed API
+pyproject.toml         Python deps + the Vercel entrypoint
+build_frontend.py      builds the React app during a Vercel deploy
 CONTEXT.md               how the project works
 PRESENTATION.md          a cheat-sheet for presenting it
 AGENTIC_LOOP_ANALYSIS.md full audit (static + runtime evidence)

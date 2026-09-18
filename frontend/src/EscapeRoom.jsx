@@ -1,124 +1,25 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
-/**
- * Escape Room — Agentic Loop dashboard.
- *
- * Left  = inputs (agent's tools, settings, puzzle editor with X/Y, live state).
- * Right = a 2D map where the agent (🤖) walks to items and acts in real time,
- *         plus a step-by-step execution trace (thought → action → result).
- *
- * The Anthropic loop + tool execution live in the Python backend and stream
- * events over SSE. The frontend buffers those events in a queue and plays them
- * back with animation pacing, so nothing blocks the backend's API threads.
- */
-
-const GRID = 5;
-const AGENT_START = { x: 2, y: 4 };
-
-// The exact tools the agent can call each turn (mirrors backend/skill.py).
-const AGENT_ACTIONS = [
-  { icon: "👁️", name: "look_around()", desc: "Survey the room — lists every visible item and whether it's locked." },
-  { icon: "🔍", name: "investigate_item(name)", desc: "Read an item's description + clue. If it holds something and is unlocked, the agent takes it." },
-  { icon: "🖐️", name: "use_item_on_target(item, target)", desc: "Enter a code, or use a key from inventory, to unlock a target." },
-  { icon: "🚪", name: "escape()", desc: "Try to leave. Works only once the exit door is unlocked." },
-];
-
-const CANDIDATE_CELLS = [
-  [2, 0], [1, 2], [3, 2], [0, 1], [4, 1], [2, 2], [0, 3], [4, 3], [1, 0], [3, 0], [2, 3], [0, 0],
-];
-
-const EMPTY_ITEM = () => ({
-  id: "", name: "", description: "", isVisible: true, isLocked: false,
-  codeRequired: "", keyRequired: "", holdsItem: "", clue: "", isExit: false,
-  maxAttempts: "", x: undefined, y: undefined,
-});
-
-const norm = (s) => String(s || "").trim().toLowerCase().replace(/[_\s]/g, "");
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const cellPct = (v) => ((v + 0.5) / GRID) * 100;
-
-function iconFor(item) {
-  const n = (item.name || "").toLowerCase();
-  // Name wins over isExit, so an exit that is a vent/hatch keeps its own look
-  // instead of turning into a door.
-  if (n.includes("vent") || n.includes("duct") || n.includes("shaft") || n.includes("grate")) return "🕳️";
-  if (n.includes("window")) return "🪟";
-  if (n.includes("door") || n.includes("exit") || n.includes("hatch") || n.includes("gate")) return "🚪";
-  if (n.includes("chest") || n.includes("box") || n.includes("crate")) return "📦";
-  if (n.includes("table") || n.includes("desk")) return "🪑";
-  if (n.includes("wall") || n.includes("brick")) return "🧱";
-  if (n.includes("drawer") || n.includes("cabinet")) return "🗄️";
-  if (n.includes("paint") || n.includes("picture") || n.includes("frame")) return "🖼️";
-  if (n.includes("safe") || n.includes("vault")) return "🔐";
-  if (n.includes("key")) return "🗝️";
-  if (n.includes("plant") || n.includes("pot")) return "🪴";
-  if (n.includes("rug") || n.includes("carpet")) return "🧶";
-  if (n.includes("book") || n.includes("shelf")) return "📚";
-  if (n.includes("clock")) return "🕰️";
-  if (n.includes("lamp") || n.includes("light")) return "💡";
-  if (item.isExit) return "🚪";   // an exit with an unrecognized name still reads as a way out
-  return "📦";
-}
-
-// Give every item a grid cell, keeping any coords the user already set.
-function assignPositions(list) {
-  const used = new Set();
-  list.forEach((it) => {
-    if (Number.isFinite(it.x) && Number.isFinite(it.y)) used.add(`${it.x},${it.y}`);
-  });
-  let ci = 0;
-  return list.map((it) => {
-    if (Number.isFinite(it.x) && Number.isFinite(it.y)) return it;
-    let cell;
-    if (it.isExit) {
-      cell = [Math.floor(GRID / 2), 0];
-    } else {
-      while (ci < CANDIDATE_CELLS.length && used.has(CANDIDATE_CELLS[ci].join(","))) ci++;
-      cell = CANDIDATE_CELLS[ci] || [ci % GRID, Math.min(GRID - 1, 2 + Math.floor(ci / GRID))];
-      ci++;
-    }
-    used.add(cell.join(","));
-    return { ...it, x: cell[0], y: cell[1] };
-  });
-}
-
-function freeCell(list) {
-  const used = new Set(list.map((it) => `${it.x},${it.y}`));
-  for (const [x, y] of CANDIDATE_CELLS) if (!used.has(`${x},${y}`)) return { x, y };
-  for (let y = 1; y < GRID; y++) for (let x = 0; x < GRID; x++) if (!used.has(`${x},${y}`)) return { x, y };
-  return { x: 4, y: 4 };
-}
-
-// Strip empty optional fields into a clean room definition for the backend.
-function cleanItem(raw, index) {
-  const id = (raw.id && raw.id.trim()) ||
-    (raw.name || `item_${index + 1}`).trim().toLowerCase().replace(/\s+/g, "_");
-  const item = { id, name: (raw.name || id).trim(), isVisible: raw.isVisible !== false };
-  if (raw.description?.trim()) item.description = raw.description.trim();
-  if (raw.clue?.trim()) item.clue = raw.clue.trim();
-  if (raw.codeRequired?.toString().trim()) item.codeRequired = raw.codeRequired.toString().trim();
-  if (raw.keyRequired?.trim()) item.keyRequired = raw.keyRequired.trim();
-  if (raw.holdsItem?.trim()) item.holdsItem = raw.holdsItem.trim();
-  // Fragile lock: after this many WRONG attempts the object jams permanently.
-  // Only meaningful on a lockable object; 0/blank means "never jams".
-  const maxTries = parseInt(raw.maxAttempts, 10);
-  if (Number.isFinite(maxTries) && maxTries > 0) item.maxAttempts = maxTries;
-  if (raw.isExit) item.isExit = true;
-  if (Number.isFinite(raw.x)) item.x = raw.x;
-  if (Number.isFinite(raw.y)) item.y = raw.y;
-  // The "starts locked" checkbox is the source of truth. (Entering a code/key
-  // auto-checks it in the editor, but the user can uncheck it.) A container that
-  // merely holds an item is NOT a lock — it gets no isLocked field, so the map
-  // shows no padlock on it unless it is genuinely locked.
-  if (item.codeRequired || item.keyRequired || raw.isExit || raw.isLocked) {
-    item.isLocked = !!raw.isLocked;
-  }
-  return item;
-}
+import { ItemForm } from "./components/ItemForm";
+import { RoomMap } from "./components/RoomMap";
+import { StateObjectCard } from "./components/StateObjectCard";
+import { StepCard } from "./components/StepCard";
+import { Card, StatusBadge } from "./components/ui";
+import { archiveRun, getJson, streamRun } from "./lib/api";
+import { AGENT_START, GRID, assignPositions, freeCell, iconFor, norm, sleep } from "./lib/grid";
+import { KEYFRAMES } from "./lib/keyframes";
+import { AGENT_ACTIONS, EMPTY_ITEM, cleanItem } from "./lib/room";
+import {
+  addUserRoom, appendRun, clearRuns, deleteRoom, getRun,
+  listRuns, mergeRooms, revertRoom, saveRoomEdit,
+} from "./lib/storage";
+import { mergeIter } from "./lib/trace";
 
 export default function EscapeRoom() {
   const [moveLimit, setMoveLimit] = useState(() => Number(localStorage.getItem("er_move_limit")) || 15);
   const [provider, setProvider] = useState(() => localStorage.getItem("er_provider") || "auto");
+  const [hasCli, setHasCli] = useState(false);
+  const [maxMoveLimit, setMaxMoveLimit] = useState(40);
   // Resizable split: width of the LEFT column (percent); the right column flexes.
   const [leftWidth, setLeftWidth] = useState(() => Number(localStorage.getItem("er_left_w")) || 40);
   const [isWide, setIsWide] = useState(true);
@@ -148,8 +49,9 @@ export default function EscapeRoom() {
   const [effect, setEffect] = useState(null);          // {x,y,kind}
   const [confetti, setConfetti] = useState(false);
 
-  const esRef = useRef(null);
-  const sessionRef = useRef(null);
+  const abortRef = useRef(null);
+  const streamEndedRef = useRef(false);
+  const doneRef = useRef(false);
   const traceRef = useRef(null);
   const atBottomRef = useRef(true);
   const itemsRef = useRef([]);
@@ -218,8 +120,17 @@ export default function EscapeRoom() {
 
   // Seed editor + map from the backend's default puzzle.
   useEffect(() => {
-    fetch("/api/default-room")
-      .then((r) => r.json())
+    getJson("/api/health")
+      .then((h) => {
+        setHasCli(!!h.has_cli);
+        if (!h.has_cli) setProvider((p) => (p === "cli" ? "auto" : p));
+        if (h.max_move_limit) {
+          setMaxMoveLimit(h.max_move_limit);
+          setMoveLimit((m) => Math.min(h.max_move_limit, Math.max(1, m)));
+        }
+      })
+      .catch(() => {});
+    getJson("/api/default-room")
       .then((data) => {
         const room = data.room || { items: [], inventory: [] };
         const seeded = assignPositions(room.items.map((it) => ({ ...EMPTY_ITEM(), ...it })));
@@ -228,7 +139,7 @@ export default function EscapeRoom() {
       })
       .catch(() => setError("Could not reach the backend at /api. Is the server running on :8000?"));
     refreshPresets();
-    return () => { esRef.current?.close(); clearTimeout(loopTimerRef.current); };
+    return () => { abortRef.current?.abort(); clearTimeout(loopTimerRef.current); };
   }, []);
 
   // Loop mode: after a run finishes, automatically start the next one.
@@ -242,9 +153,12 @@ export default function EscapeRoom() {
   };
 
   const refreshPresets = () =>
-    fetch("/api/presets")
-      .then((r) => r.json())
-      .then((data) => { setPresets(data.presets || []); return data.presets || []; })
+    getJson("/api/presets")
+      .then((data) => {
+        const merged = mergeRooms(data.presets || []);
+        setPresets(merged);
+        return merged;
+      })
       .catch(() => []);
 
   const loadPreset = (room, name) => {
@@ -256,47 +170,40 @@ export default function EscapeRoom() {
     if (name) setRoomName(name);
   };
 
-  // Persist a finished run to escaping-history.json (via the backend).
   const saveRun = (finalSteps, reason, finalState) => {
     const outcome =
       reason === "escaped" ? "Escaped"
       : reason === "out_of_moves" ? "Out of moves"
       : reason === "cant_solve" ? "Stuck"
       : "Ended";
-    fetch("/api/history", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        room_name: roomNameRef.current,
-        outcome,
-        room: { items: itemsRef.current.map(cleanItem), inventory: [] },
-        steps: finalSteps,
-        state: finalState || null,
-      }),
-    }).catch(() => {});
+    const record = {
+      room_name: roomNameRef.current,
+      outcome,
+      room: { items: itemsRef.current.map(cleanItem), inventory: [] },
+      steps: finalSteps,
+      state: finalState || null,
+    };
+    appendRun(record);
+    archiveRun(record);
   };
 
   const openHistory = () => {
-    fetch("/api/history")
-      .then((r) => r.json())
-      .then((data) => setHistory(data.runs || []))
-      .catch(() => setHistory([]));
+    setHistory(listRuns());
     setShowHistory(true);
   };
 
-  const clearHistory = async () => {
+  const clearHistory = () => {
     if (!window.confirm("Delete ALL escaping history? This cannot be undone.")) return;
-    await fetch("/api/history", { method: "DELETE" }).catch(() => {});
+    clearRuns();
     setHistory([]);
   };
 
   // Load a past run: reload its room and replay its finished execution trace.
   const loadHistoryEntry = (num) => {
-    fetch(`/api/history/${num}`)
-      .then((r) => r.json())
-      .then((entry) => {
+    const entry = getRun(num);
+    if (entry) {
         runIdRef.current++;
-        esRef.current?.close();
+        abortRef.current?.abort();
         queueRef.current = [];
         drainingRef.current = false;
         const seeded = assignPositions((entry.room.items || []).map((it) => ({ ...EMPTY_ITEM(), ...it })));
@@ -313,27 +220,22 @@ export default function EscapeRoom() {
           : "Ended"
         );
         setShowHistory(false);
-      })
-      .catch(() => {});
+    }
   };
 
   const saveCurrentAsPreset = async () => {
     const name = window.prompt("Name this preset:", "My room");
     if (!name || !name.trim()) return;
-    await fetch("/api/presets", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: name.trim(),
-        description: "Your saved room",
-        room: { items: items.map(cleanItem), inventory: [] },
-      }),
-    }).catch(() => {});
+    addUserRoom({
+      name: name.trim(),
+      description: "Your saved room",
+      room: { items: items.map(cleanItem), inventory: [] },
+    });
     await refreshPresets();
   };
 
   const deleteCustomPreset = async (id) => {
-    await fetch(`/api/presets/${id}`, { method: "DELETE" }).catch(() => {});
+    deleteRoom(id);
     if (editingId === id) setEditingId(null);
     await refreshPresets();
   };
@@ -350,11 +252,7 @@ export default function EscapeRoom() {
   const saveEdits = async () => {
     if (!editingId) return;
     const room = { items: items.map(cleanItem), inventory: [] };
-    await fetch(`/api/presets/${editingId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ room }),
-    }).catch(() => {});
+    saveRoomEdit(editingId, room);
     await refreshPresets();
     setLiveState({ items: room.items, inventory: [], escaped: false });
     setEditingId(null);
@@ -369,7 +267,7 @@ export default function EscapeRoom() {
 
   // Drop a built-in preset's override, restoring the original room.
   const revertPreset = async (id) => {
-    await fetch(`/api/presets/${id}`, { method: "DELETE" }).catch(() => {});
+    revertRoom(id);
     if (editingId === id) setEditingId(null);
     const fresh = await refreshPresets();
     const base = fresh.find((p) => p.id === id);
@@ -485,36 +383,28 @@ export default function EscapeRoom() {
     localStorage.setItem("er_move_limit", String(moveLimit));
     localStorage.setItem("er_provider", provider);
     const myRun = ++runIdRef.current;
+    const controller = new AbortController();
+    abortRef.current = controller;
+    streamEndedRef.current = false;
+    doneRef.current = false;
+
+    const room = { items: items.map(cleanItem), inventory: [] };
+    setLiveState({ items: room.items, inventory: [], escaped: false });
 
     try {
-      const room = { items: items.map(cleanItem), inventory: [] };
-      const res = await fetch("/api/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ room, move_limit: moveLimit, provider }),
-      });
-      if (!res.ok) throw new Error(`Failed to create session (${res.status}).`);
-      const data = await res.json();
-      sessionRef.current = data.session_id;
-      setLiveState(data.state);
-
-      const es = new EventSource(`/api/session/${data.session_id}/run`);
-      esRef.current = es;
-      es.onmessage = (ev) => {
-        if (runIdRef.current !== myRun) return;
-        try {
-          queueRef.current.push(JSON.parse(ev.data));
+      await streamRun(
+        { room, move_limit: moveLimit, provider },
+        (event) => {
+          if (runIdRef.current !== myRun) return;
+          queueRef.current.push(event);
           drain(myRun);
-        } catch { /* ignore keep-alives */ }
-      };
-      es.addEventListener("end", () => es.close());
-      es.onerror = () => {
-        es.close();
-        if (runIdRef.current === myRun && drainingRef.current === false && queueRef.current.length === 0) {
-          setStatus((s) => (["ESCAPED! 🎉", "OUT OF MOVES ☠️", "Ended"].includes(s) ? s : "Error"));
-        }
-      };
+        },
+        controller.signal,
+      );
+      streamEndedRef.current = true;
+      drain(myRun);
     } catch (err) {
+      if (err.name === "AbortError" || runIdRef.current !== myRun) return;
       setStatus("Error");
       setError(err.message);
     }
@@ -523,11 +413,22 @@ export default function EscapeRoom() {
   const drain = async (myRun) => {
     if (drainingRef.current) return;
     drainingRef.current = true;
-    while (queueRef.current.length && runIdRef.current === myRun) {
-      const ev = queueRef.current.shift();
-      await handleEvent(ev, myRun);
+    try {
+      while (queueRef.current.length && runIdRef.current === myRun) {
+        const ev = queueRef.current.shift();
+        await handleEvent(ev, myRun);
+      }
+    } catch (err) {
+      setStatus("Error");
+      setError(`Playback failed: ${err.message}`);
+      queueRef.current = [];
+    } finally {
+      drainingRef.current = false;
     }
-    drainingRef.current = false;
+    if (streamEndedRef.current && !doneRef.current && runIdRef.current === myRun && !queueRef.current.length) {
+      setStatus("Error");
+      setError("The run stream ended before the agent finished.");
+    }
   };
 
   const handleEvent = async (event, myRun) => {
@@ -569,14 +470,15 @@ export default function EscapeRoom() {
       }
 
       case "result": {
-        setSteps((prev) => mergeIter(prev, event.iteration, { result: event.text, solved: event.update?.solved }));
+        const after = event.update?.after || {};
+        const jammed = after.status === "jammed";
+        const success = !jammed && !!event.update?.changed?.includes("isLocked") && after.isLocked === false;
+        setSteps((prev) => mergeIter(prev, event.iteration, { result: event.text, solved: !!event.update?.solved && !jammed, update: event.update, jammed }));
         if (event.update?.target) setLastUpdate({ ...event.update, iteration: event.iteration });
-        const success = !/still locked|don't have|no '|nothing happens|unknown tool/i.test(event.text);
-        const targetName = event.input?.target_object || event.input?.item_name;
-        const c = coordsFor(targetName) || agentPosRef.current;
+        const c = coordsFor(event.update?.target_name) || agentPosRef.current;
         if (event.tool === "use_item_on_target") {
           setConnector((k) => (k ? { ...k, ok: success } : null));
-          setEffect({ x: c.x, y: c.y, kind: success ? "unlock" : "fail" });
+          setEffect({ x: c.x, y: c.y, kind: jammed ? "jam" : success ? "unlock" : "fail" });
         } else if (event.tool === "investigate_item") {
           setEffect({ x: c.x, y: c.y, kind: /found a .*inside/i.test(event.text) ? "pickup" : "search" });
         }
@@ -589,6 +491,7 @@ export default function EscapeRoom() {
       }
 
       case "done":
+        doneRef.current = true;
         if (event.reason === "escaped") {
           const d = doorCoords();
           setAgentPos(d);
@@ -645,16 +548,15 @@ export default function EscapeRoom() {
 
   const reset = (keepConfigOnly) => {
     runIdRef.current++;
-    esRef.current?.close();
+    abortRef.current?.abort();
+    abortRef.current = null;
+    streamEndedRef.current = false;
+    doneRef.current = false;
     queueRef.current = [];
     drainingRef.current = false;
     // Cancel any pending loop restart (start() calls reset(true), which is fine
     // because start reschedules only after the next run finishes).
     if (!keepConfigOnly) clearTimeout(loopTimerRef.current);
-    if (sessionRef.current) {
-      fetch(`/api/session/${sessionRef.current}`, { method: "DELETE" }).catch(() => {});
-      sessionRef.current = null;
-    }
     setSteps([]);
     setError("");
     setLastUpdate(null);
@@ -853,7 +755,7 @@ export default function EscapeRoom() {
                 className="bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-xs text-slate-200 disabled:opacity-50">
                 <option value="auto">auto (key → CLI)</option>
                 <option value="api">api (token)</option>
-                <option value="cli">cli (local login)</option>
+                {hasCli && <option value="cli">cli (local login)</option>}
               </select>
               {provider === "cli" && <span className="text-[10px] text-amber-400" title="Each move spawns a fresh `claude -p` process">~7s/move</span>}
             </label>
@@ -884,6 +786,7 @@ export default function EscapeRoom() {
                 onSelectItem={setSelectedIndex}
                 moveLimit={moveLimit}
                 onMoveLimit={setMoveLimit}
+                maxMoveLimit={maxMoveLimit}
               />
 
               {/* Live State — moved directly under the map */}
@@ -956,375 +859,3 @@ export default function EscapeRoom() {
     </div>
   );
 }
-
-/* ---------- trace mutator: one entry per real backend iteration (turn) ---------- */
-
-function mergeIter(prev, iteration, patch) {
-  const n = iteration || 1;
-  const idx = prev.findIndex((s) => s.iter && s.n === n);
-  if (idx === -1) return [...prev, { iter: true, n, ...patch }];
-  return prev.map((s, i) => (i === idx ? { ...s, ...patch } : s));
-}
-
-/* ---------- 2D map ---------- */
-
-function RoomMap({ items, lockByName, jammedByName, agentPos, agentTool, connector, effect, confetti, confettiPieces, editable, selectedIndex, onAddCell, onSelectItem, moveLimit, onMoveLimit }) {
-  const toolBadge = agentTool === "search" ? "🔍" : agentTool === "hand" ? "🖐️" : agentTool === "look" ? "👀" : null;
-
-  // Map each cell -> item index (for the tile + click behaviour).
-  const itemAtCell = {};
-  items.forEach((it, i) => { if (Number.isFinite(it.x)) itemAtCell[`${it.x},${it.y}`] = i; });
-  const cells = [];
-  for (let y = 0; y < GRID; y++) for (let x = 0; x < GRID; x++) cells.push({ x, y });
-
-  return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-3">
-      <div className="flex items-center justify-between mb-1 gap-2">
-        <h2 className="text-sm font-semibold text-slate-200">🧩 Room · Puzzle Editor</h2>
-        <label className="flex items-center gap-1.5 text-[11px] text-slate-400">
-          move limit
-          <input type="number" min={1} max={100} value={moveLimit}
-            onChange={(e) => onMoveLimit(Math.max(1, Number(e.target.value) || 1))} disabled={!editable}
-            className="w-14 bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-xs outline-none focus:border-emerald-500 disabled:opacity-50" />
-        </label>
-      </div>
-      <p className="text-[11px] text-slate-500 mb-2">{editable ? "click a + tile to add · click an item to edit" : "agent walks the room in real time"}</p>
-      <div className="relative w-full aspect-square rounded-lg overflow-hidden border border-slate-700 bg-slate-950">
-        {/* tile grid */}
-        <div className="absolute inset-0 grid" style={{ gridTemplateColumns: `repeat(${GRID},1fr)`, gridTemplateRows: `repeat(${GRID},1fr)` }}>
-          {cells.map(({ x, y }) => {
-            const idx = itemAtCell[`${x},${y}`];
-            const it = idx != null ? items[idx] : null;
-            if (it) {
-              // While editing, the padlock must reflect the item you're building
-              // right now (code/key required + starts locked) — liveState only has
-              // items from the last run. During a run, use the live lock state.
-              const lockable = !!(it.codeRequired || it.keyRequired || it.isExit || it.isLocked);
-              const locked = editable ? (lockable ? !!it.isLocked : undefined) : lockByName[norm(it.name)];
-              const jammed = jammedByName?.has(norm(it.name));
-              const isDoor = it.isExit || (it.name || "").toLowerCase().includes("door");
-              const selected = idx === selectedIndex;
-              return (
-                <button
-                  key={`${x},${y}`}
-                  onClick={() => onSelectItem?.(idx)}
-                  disabled={!editable}
-                  title={it.name || "unnamed"}
-                  className={`relative flex flex-col items-center justify-center border border-slate-800/70 transition
-                    ${selected ? "bg-emerald-500/20 ring-2 ring-emerald-500" : "bg-slate-800/30 hover:bg-slate-800/60"}
-                    ${isDoor && locked === false ? "drop-shadow-[0_0_10px_#34d399]" : ""}`}
-                >
-                  <span className="text-3xl leading-none" style={isDoor ? { filter: locked === false ? "none" : "grayscale(0.25)" } : undefined}>
-                    {iconFor(it)}
-                  </span>
-                  <span className="text-[8px] leading-none text-slate-300 truncate max-w-full px-0.5">{it.name || "?"}</span>
-                  {jammed
-                    ? <span className="absolute top-0 right-0.5 text-[10px] leading-none" title="jammed — permanently stuck">⛔</span>
-                    : locked !== undefined && <span className="absolute top-0 right-0.5 text-[10px] leading-none">{locked ? "🔒" : "🔓"}</span>}
-                </button>
-              );
-            }
-            // empty cell
-            return (
-              <button
-                key={`${x},${y}`}
-                onClick={() => editable && onAddCell?.(x, y)}
-                disabled={!editable}
-                className={`flex items-center justify-center border border-slate-800/40 text-slate-700 ${editable ? "hover:bg-emerald-500/10 hover:text-emerald-400" : "cursor-default"}`}
-              >
-                {editable && <span className="text-base leading-none">+</span>}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* connector line for "use" */}
-        {connector && (
-          <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ overflow: "visible" }}>
-            <line
-              x1={`${cellPct(connector.from.x)}%`} y1={`${cellPct(connector.from.y)}%`}
-              x2={`${cellPct(connector.to.x)}%`} y2={`${cellPct(connector.to.y)}%`}
-              stroke={connector.ok === false ? "#f87171" : connector.ok ? "#34d399" : "#fbbf24"}
-              strokeWidth="2" strokeDasharray="5 4" className="er-dash"
-            />
-          </svg>
-        )}
-
-        {/* per-item effect (magnifier / sparks / pickup) */}
-        {effect && (
-          <span
-            className="absolute -translate-x-1/2 -translate-y-full text-2xl er-pop pointer-events-none z-20"
-            style={{ left: `${cellPct(effect.x)}%`, top: `${cellPct(effect.y)}%` }}
-          >
-            {effect.kind === "unlock" ? "✨" : effect.kind === "fail" ? "❌" : effect.kind === "pickup" ? "🎒" : "🔍"}
-          </span>
-        )}
-
-        {/* agent */}
-        <div
-          className="absolute flex flex-col items-center -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none"
-          style={{ left: `${cellPct(agentPos.x)}%`, top: `${cellPct(agentPos.y)}%`, transition: "left 1.2s ease, top 1.2s ease" }}
-        >
-          {toolBadge && <span className="text-2xl leading-none er-bob">{toolBadge}</span>}
-          <span className="text-4xl leading-none">🤖</span>
-        </div>
-
-        {/* confetti */}
-        {confetti && (
-          <div className="absolute inset-0 pointer-events-none overflow-hidden z-30">
-            {confettiPieces.map((p, i) => (
-              <span key={i} className="absolute top-0 rounded-sm er-fall"
-                style={{ left: `${p.left}%`, width: p.size, height: p.size, background: p.color, animationDelay: `${p.delay}s`, animationDuration: `${p.dur}s` }} />
-            ))}
-            <div className="absolute inset-0 flex items-center justify-center text-3xl font-bold text-emerald-300 er-pop">ESCAPED! 🎉</div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/* ---------- small presentational helpers ---------- */
-
-function Card({ title, action, children }) {
-  return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900/40">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800">
-        <h2 className="text-sm font-semibold text-slate-200">{title}</h2>
-        {action}
-      </div>
-      <div className="p-4">{children}</div>
-    </div>
-  );
-}
-
-function Field({ label, value, onChange, disabled, placeholder }) {
-  return (
-    <label className="block">
-      <span className="text-xs text-slate-500">{label}</span>
-      <input value={value || ""} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} disabled={disabled}
-        className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs mt-0.5 disabled:opacity-50" />
-    </label>
-  );
-}
-
-// Editor form for the single currently-selected item.
-function ItemForm({ item, onField, disabled }) {
-  return (
-    <div className="space-y-2">
-      <Field label="Name" value={item.name} onChange={(v) => onField("name", v)} disabled={disabled} placeholder="e.g. box 1" />
-      <label className="block">
-        <span className="text-xs text-slate-500">Description</span>
-        <textarea value={item.description} onChange={(e) => onField("description", e.target.value)}
-          placeholder="What the agent reads when it investigates this." disabled={disabled} rows={2}
-          className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs mt-0.5 resize-none disabled:opacity-50" />
-      </label>
-      <div className="grid grid-cols-2 gap-2">
-        <Field label="Code required" value={item.codeRequired} onChange={(v) => onField("codeRequired", v)} disabled={disabled} placeholder="e.g. 4829" />
-        <Field label="Key required" value={item.keyRequired} onChange={(v) => onField("keyRequired", v)} disabled={disabled} placeholder="e.g. brass_key" />
-        <Field label="Holds item" value={item.holdsItem} onChange={(v) => onField("holdsItem", v)} disabled={disabled} placeholder="revealed when unlocked" />
-        <Field label="Clue" value={item.clue} onChange={(v) => onField("clue", v)} disabled={disabled} placeholder="hidden hint" />
-        <Field label="Max wrong tries" value={item.maxAttempts} onChange={(v) => onField("maxAttempts", v)} disabled={disabled} placeholder="blank = never jams" />
-      </div>
-      <div className="flex items-center gap-5 pt-1 text-xs text-slate-400">
-        <label className="flex items-center gap-1.5">
-          <input type="checkbox" checked={!!item.isLocked} onChange={(e) => onField("isLocked", e.target.checked)} disabled={disabled} /> starts locked
-        </label>
-        <label className="flex items-center gap-1.5">
-          <input type="checkbox" checked={!!item.isExit} onChange={(e) => onField("isExit", e.target.checked)} disabled={disabled} /> is an exit (escape route)
-        </label>
-      </div>
-    </div>
-  );
-}
-
-// Small copy-to-clipboard button with brief "copied" feedback.
-function CopyBtn({ text, label }) {
-  const [copied, setCopied] = useState(false);
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(text || "");
-    } catch {
-      // fallback for non-secure contexts
-      const ta = document.createElement("textarea");
-      ta.value = text || ""; document.body.appendChild(ta); ta.select();
-      try { document.execCommand("copy"); } catch { /* ignore */ }
-      document.body.removeChild(ta);
-    }
-    setCopied(true); setTimeout(() => setCopied(false), 1200);
-  };
-  return (
-    <button onClick={copy}
-      className="text-[10px] px-1.5 py-0.5 rounded border border-slate-700 text-slate-400 hover:text-sky-300 hover:border-sky-400">
-      {copied ? "✓ copied" : `⧉ copy${label ? " " + label : ""}`}
-    </button>
-  );
-}
-
-function StepCard({ step }) {
-  const [showDebug, setShowDebug] = useState(false);
-  if (step.done) {
-    const escaped = step.done === "escaped";
-    const oom = step.done === "out_of_moves";
-    const cant = step.done === "cant_solve";
-    const label = escaped ? "🎉 ESCAPED" : oom ? "☠️ OUT OF MOVES" : cant ? "🤷 I CAN'T SOLVE IT" : "⏹ ENDED";
-    const cls = escaped
-      ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
-      : oom || cant
-      ? "border-red-500/40 bg-red-500/10 text-red-300"
-      : "border-sky-500/40 bg-sky-500/10 text-sky-300";
-    return (
-      <div className={`rounded-lg border p-3 text-sm ${cls}`}>
-        <div className="font-semibold">{label}</div>
-        {step.text && <p className="mt-1 font-normal whitespace-pre-wrap">{step.text}</p>}
-      </div>
-    );
-  }
-  if (step.error) {
-    return <div className="rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-300">⚠ {step.error}</div>;
-  }
-  if (step.note) {
-    return <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-2 text-xs text-amber-300">⏳ {step.note}</div>;
-  }
-  const a = step.action;
-  const hasDebug = !!(step.llmInput || step.llmOutput);
-  return (
-    <div className="rounded-lg border border-slate-800 bg-slate-950/60 p-3">
-      <div className="text-[11px] uppercase tracking-wide text-slate-500 mb-1">Iteration {step.n}</div>
-      {step.thought
-        ? <p className="italic text-slate-300 text-sm mb-2 whitespace-pre-wrap">💭 {step.thought}</p>
-        : <p className="italic text-slate-600 text-xs mb-2">(no thinking emitted this turn)</p>}
-      {a && (
-        <div className="mt-1 border-l-2 border-slate-700 pl-3">
-          <div className="text-sm flex items-center gap-1.5">
-            <span className="text-amber-400">▸ {a.tool}</span>
-            <span className="text-amber-200/70">({JSON.stringify(a.input || {})})</span>
-            {a.move ? <span className="text-slate-600 text-xs"> · move {a.move}</span> : null}
-            {hasDebug && (
-              <button onClick={() => setShowDebug((v) => !v)}
-                title="Show the exact LLM input & output for this turn"
-                className={`ml-1 w-4 h-4 inline-flex items-center justify-center rounded-full border text-[10px] leading-none ${showDebug ? "border-sky-400 text-sky-300 bg-sky-500/10" : "border-slate-600 text-slate-400 hover:border-sky-400 hover:text-sky-300"}`}>
-                i
-              </button>
-            )}
-          </div>
-          {hasDebug && showDebug && (
-            <div className="mt-2 space-y-2 text-[10px]">
-              {step.llmInput && (
-                <div>
-                  <div className="flex items-center justify-between mb-0.5">
-                    <span className="text-slate-500 uppercase tracking-wide">LLM input (exact request)</span>
-                    <CopyBtn text={step.llmInput} label="input" />
-                  </div>
-                  <pre className="h-52 min-h-16 resize-y overflow-auto bg-black/50 border border-slate-800 rounded p-2 text-sky-200/80 whitespace-pre-wrap">{step.llmInput}</pre>
-                </div>
-              )}
-              {step.llmOutput && (
-                <div>
-                  <div className="flex items-center justify-between mb-0.5">
-                    <span className="text-slate-500 uppercase tracking-wide">LLM output (raw response)</span>
-                    <CopyBtn text={step.llmOutput} label="output" />
-                  </div>
-                  <pre className="h-40 min-h-16 resize-y overflow-auto bg-black/50 border border-slate-800 rounded p-2 text-emerald-200/80 whitespace-pre-wrap">{step.llmOutput}</pre>
-                </div>
-              )}
-            </div>
-          )}
-          {step.result != null && (
-            <div className={`text-sm mt-1 whitespace-pre-wrap ${resultOk(step.result) ? "text-emerald-300" : "text-red-300"}`}>
-              ↳ {step.result}
-            </div>
-          )}
-          {step.result != null && step.solved !== undefined && a?.tool !== "look_around" && (
-            <div className={`text-[11px] mt-1 ${step.solved ? "text-emerald-400" : "text-amber-400"}`}>
-              {step.solved ? "✓ state changed — progress made" : "✗ no state change — the agent must try something else"}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function resultOk(text) {
-  return !/still locked|don't have|no '|nothing happens|unknown tool|jam|wrong/i.test(text || "");
-}
-
-/* ---------- World State: one JSON object per item ---------- */
-
-const STATUS_STYLES = {
-  locked: "bg-red-500/20 text-red-300 border-red-500/40",
-  unlocked: "bg-amber-500/20 text-amber-300 border-amber-500/40",
-  emptied: "bg-slate-500/20 text-slate-300 border-slate-500/40",
-  escaped: "bg-emerald-500/20 text-emerald-300 border-emerald-500/40",
-  unexamined: "bg-slate-500/20 text-slate-400 border-slate-600/40",
-  examined: "bg-sky-500/20 text-sky-300 border-sky-500/40",
-  jammed: "bg-rose-600/30 text-rose-200 border-rose-500/60",
-};
-
-function StatusBadge({ status }) {
-  return (
-    <span className={`px-2 py-0.5 rounded-full text-[10px] border ${STATUS_STYLES[status] || STATUS_STYLES.unexamined}`}>
-      {status || "—"}
-    </span>
-  );
-}
-
-// The JSON we show for each object — API-response-like data the agent works against.
-function apiJson(it) {
-  const o = { id: it.id, status: it.status };
-  if (it.codeRequired) o.code_required = it.codeRequired;
-  if (it.keyRequired) o.key_required = it.keyRequired;
-  if ("holdsItem" in it) o.holds = it.holdsItem || null;
-  // Show the fragile-lock budget so the ticking counter is visible in the state panel.
-  if (it.maxAttempts) o.attempts = `${it.attempts || 0}/${it.maxAttempts}`;
-  if (it.isExit) o.exit = true;
-  return o;
-}
-
-function StateObjectCard({ item, update }) {
-  const changed = !!update;
-  return (
-    <div
-      // key on iteration forces a remount so the flash animation replays each change
-      key={changed ? `flash-${update.iteration}` : "idle"}
-      className={`rounded-lg border p-2.5 bg-slate-950/60 ${changed ? "border-emerald-500 er-flash" : "border-slate-800"}`}
-    >
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-sm text-slate-200">{iconFor(item)} {item.name}</span>
-        <StatusBadge status={item.status} />
-      </div>
-      <pre className="text-[11px] text-emerald-200/80 bg-black/40 rounded p-2 overflow-x-auto">
-{JSON.stringify(apiJson(item), null, 2)}
-      </pre>
-      {changed && update.changed?.length > 0 && (
-        <div className="mt-1.5 text-[11px] space-y-0.5">
-          {update.changed.map((f) => (
-            <div key={f} className="text-slate-400">
-              <span className="text-slate-300">{f}:</span>{" "}
-              <span className="text-red-300 line-through">{String(update.before?.[f])}</span>{" "}
-              <span className="text-slate-500">→</span>{" "}
-              <span className="text-emerald-300">{String(update.after?.[f])}</span>
-            </div>
-          ))}
-          <div className={update.solved ? "text-emerald-400" : "text-amber-400"}>
-            {update.solved ? "✓ updated by this action" : "✗ unchanged"}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-const KEYFRAMES = `
-@keyframes er-fall { 0%{transform:translateY(-10px) rotate(0);opacity:1} 100%{transform:translateY(360px) rotate(540deg);opacity:0} }
-@keyframes er-pop { 0%{transform:scale(0);opacity:0} 40%{transform:scale(1.25);opacity:1} 100%{transform:scale(1);opacity:0} }
-@keyframes er-bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
-@keyframes er-dash { to { stroke-dashoffset: -18; } }
-@keyframes er-flash { 0%{background-color:rgba(16,185,129,0.28)} 100%{background-color:rgba(2,6,23,0.6)} }
-.er-fall{ animation-name:er-fall; animation-timing-function:ease-in; animation-iteration-count:infinite; }
-.er-pop{ animation:er-pop 1.1s ease-out; }
-.er-bob{ animation:er-bob .7s ease-in-out infinite; }
-.er-dash{ animation:er-dash .6s linear infinite; }
-.er-flash{ animation:er-flash 1.2s ease-out; }
-`;

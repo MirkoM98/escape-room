@@ -2,292 +2,127 @@
 FastAPI backend for the Escape Room agent.
 
 Exposes:
-  - Session management (create a room from the frontend puzzle editor)
-  - The agentic loop as a Server-Sent Events stream (/run)
-  - Every tool as its own "action" API, so the room can also be driven manually
-    or the tools tested in isolation.
+  - The room catalogue (read-only)
+  - The agentic loop as one Server-Sent Events stream
 
-Run it:
+The server is stateless: a run request carries its own room, so nothing has to
+survive between requests and nothing is written to disk. Everything the user
+creates (their own rooms, run history) lives in the browser's localStorage.
+
+There is no CORS middleware on purpose. In development Vite proxies /api to
+this server, and in production this app serves the built frontend itself, so
+every request is same-origin.
+
+Two paths are filesystem-dependent, both read-only-safe:
+  - presets-store.json is READ for rooms an earlier version saved to disk.
+  - escaping-history.json is APPENDED by POST /api/history, but only when the
+    filesystem is writable. That is true on a laptop and false on a serverless
+    host, where the call becomes a no-op. The browser keeps its own copy of
+    every run in localStorage, so the UI never depends on either file.
+
+Set ESCAPE_ROOM_PROVIDER on a shared deployment to stop callers choosing the
+provider themselves; "cli" spawns a local process and only suits a laptop.
+
+Run it from the repository root:
     export ANTHROPIC_API_KEY=sk-ant-...
-    uvicorn main:app --reload --port 8000
+    uvicorn backend.main:app --reload --port 8000
 """
 
 import json
 import os
-import uuid
 
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-import game
-from agent import run_agent, _cli_available
-from skill import SYSTEM_PROMPT, TOOLS
+from . import game, rooms
+from .agent import cli_available, run_agent
+from .skill import SYSTEM_PROMPT, TOOLS
+
+MAX_MOVE_LIMIT = 40
+
+DEFAULT_MODEL = "claude-sonnet-5"
+ALLOWED_MODELS = ("claude-sonnet-5", "claude-sonnet-4-6", "claude-haiku-4-5")
+
+FORCED_PROVIDER = os.environ.get("ESCAPE_ROOM_PROVIDER", "").strip()
+
+_LEGACY_ROOMS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "presets-store.json")
+
+HISTORY_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "escaping-history.json")
+
+_FRONTEND_DIST = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend", "dist"
+)
 
 app = FastAPI(title="Escape Room Agent")
 
-# Local dev: the Vite frontend runs on another port. Allow it to talk to us.
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
-# In-memory session store. Fine for a single-user local exercise.
-SESSIONS: dict[str, dict] = {}
-
-# Persistent run history, written to escaping-history.json next to this file.
-HISTORY_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "escaping-history.json")
-
-# Persistent preset edits: overrides for built-in rooms + user-created rooms.
-# Written to presets-store.json so edits survive restarts and are shared.
-PRESETS_STORE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "presets-store.json")
-
-_BUILTIN_IDS = {p["id"] for p in game.PRESETS}
-
-
-def _load_history() -> list:
-    try:
-        with open(HISTORY_FILE) as f:
-            return json.load(f).get("runs", [])
-    except (FileNotFoundError, json.JSONDecodeError):
-        return []
-
-
-def _save_history(runs: list) -> None:
-    with open(HISTORY_FILE, "w") as f:
-        json.dump({"runs": runs}, f, indent=2)
-
-
-def _load_store() -> dict:
-    try:
-        with open(PRESETS_STORE_FILE) as f:
-            data = json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        data = {}
-    return {"overrides": data.get("overrides", {}), "custom": data.get("custom", [])}
-
-
-def _save_store(store: dict) -> None:
-    with open(PRESETS_STORE_FILE, "w") as f:
-        json.dump(store, f, indent=2)
-
-
-def _merged_presets() -> list:
-    """Built-in rooms with any saved override applied, then user-created rooms."""
-    store = _load_store()
-    result = []
-    for p in game.PRESETS:
-        room = store["overrides"].get(p["id"], p["room"])
-        result.append({**p, "room": room, "custom": False, "edited": p["id"] in store["overrides"]})
-    for c in store["custom"]:
-        result.append({**c, "custom": True, "edited": False})
-    return result
-
-
-# --- request models --------------------------------------------------------
-
-class CreateSessionBody(BaseModel):
-    room: dict | None = None          # {items: [...], inventory: [...]} — optional override
-    api_key: str | None = None        # optional override; server env var wins otherwise
-    model: str = "claude-sonnet-5"
-    move_limit: int = 15              # max tool calls before "out of moves"
-    provider: str = "auto"            # "auto" | "api" | "cli" — how to reach Claude
+class RunBody(BaseModel):
+    room: dict | None = None
+    model: str = DEFAULT_MODEL
+    move_limit: int = 15
+    provider: str = "auto"
 
 
 class HistoryBody(BaseModel):
     room_name: str = "Custom room"
     outcome: str = "Ended"
-    room: dict
-    steps: list
+    room: dict = Field(default_factory=dict)
+    steps: list = Field(default_factory=list)
     state: dict | None = None
 
 
-class PresetSaveBody(BaseModel):
-    name: str | None = None          # required when creating a new custom preset
-    description: str | None = None
-    room: dict
+def _frame(payload: dict) -> str:
+    return f"data: {json.dumps(payload)}\n\n"
 
 
-class InvestigateBody(BaseModel):
-    item_name: str
+def _legacy_rooms() -> list[dict]:
+    try:
+        with open(_LEGACY_ROOMS_FILE) as f:
+            data = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return []
+    return [{**entry, "builtin": False} for entry in data.get("custom", []) if entry.get("room")]
 
-
-class UseItemBody(BaseModel):
-    item_to_use: str
-    target_object: str
-
-
-# --- helpers ---------------------------------------------------------------
-
-def _get_session(session_id: str) -> dict:
-    session = SESSIONS.get(session_id)
-    if session is None:
-        raise HTTPException(status_code=404, detail="Session not found.")
-    return session
-
-
-# --- meta ------------------------------------------------------------------
 
 @app.get("/api/health")
 def health() -> dict:
     return {
         "ok": True,
         "has_api_key": bool(os.environ.get("ANTHROPIC_API_KEY")),
-        "has_cli": _cli_available(),
+        "has_cli": cli_available() and FORCED_PROVIDER not in ("api", "auto"),
         "tools": [t["name"] for t in TOOLS],
+        "max_move_limit": MAX_MOVE_LIMIT,
+        "models": list(ALLOWED_MODELS),
     }
 
 
 @app.get("/api/default-room")
 def default_room() -> dict:
-    """The starter puzzle, used to seed the frontend editor."""
-    return {"room": game.DEFAULT_ROOM, "system_prompt": SYSTEM_PROMPT}
+    return {"room": rooms.DEFAULT_ROOM, "system_prompt": SYSTEM_PROMPT}
 
 
 @app.get("/api/presets")
 def presets() -> dict:
-    """Ready-made rooms (with saved edits applied) + user-created rooms."""
-    return {"presets": _merged_presets()}
+    catalogue = [{**p, "builtin": True} for p in rooms.PRESETS]
+    return {"presets": catalogue + _legacy_rooms()}
 
 
-@app.post("/api/presets")
-def create_preset(body: PresetSaveBody) -> dict:
-    """Create a new user room. Persists to presets-store.json."""
-    if not (body.name and body.name.strip()):
-        raise HTTPException(status_code=400, detail="A preset name is required.")
-    store = _load_store()
-    entry = {
-        "id": f"custom_{uuid.uuid4().hex[:8]}",
-        "name": body.name.strip(),
-        "description": (body.description or "Your saved room").strip(),
-        "room": body.room,
-    }
-    store["custom"].append(entry)
-    _save_store(store)
-    return {**entry, "custom": True, "edited": False}
-
-
-@app.put("/api/presets/{preset_id}")
-def save_preset(preset_id: str, body: PresetSaveBody) -> dict:
-    """Save edits to a room. Built-ins become overrides; custom rooms update in place."""
-    store = _load_store()
-    if preset_id in _BUILTIN_IDS:
-        store["overrides"][preset_id] = body.room
-    else:
-        entry = next((c for c in store["custom"] if c["id"] == preset_id), None)
-        if entry is None:
-            raise HTTPException(status_code=404, detail="Preset not found.")
-        entry["room"] = body.room
-        if body.name and body.name.strip():
-            entry["name"] = body.name.strip()
-        if body.description is not None:
-            entry["description"] = body.description.strip()
-    _save_store(store)
-    return {"ok": True}
-
-
-@app.delete("/api/presets/{preset_id}")
-def delete_preset(preset_id: str) -> dict:
-    """Delete a custom room, or revert a built-in room to its original."""
-    store = _load_store()
-    if preset_id in _BUILTIN_IDS:
-        store["overrides"].pop(preset_id, None)
-    else:
-        store["custom"] = [c for c in store["custom"] if c["id"] != preset_id]
-    _save_store(store)
-    return {"ok": True}
-
-
-# --- run history -----------------------------------------------------------
-
-@app.post("/api/history")
-def add_history(body: HistoryBody) -> dict:
-    runs = _load_history()
-    num = (runs[-1]["num"] + 1) if runs else 1
-    entry = {
-        "num": num,
-        "room_name": body.room_name,
-        "outcome": body.outcome,
-        "room": body.room,
-        "steps": body.steps,
-        "state": body.state,
-    }
-    runs.append(entry)
-    _save_history(runs)
-    return {"num": num}
-
-
-@app.get("/api/history")
-def list_history() -> dict:
-    """Summaries only (newest first), for the history list."""
-    runs = _load_history()
-    return {"runs": [{"num": r["num"], "room_name": r["room_name"], "outcome": r["outcome"]} for r in reversed(runs)]}
-
-
-@app.delete("/api/history")
-def clear_history() -> dict:
-    """Wipe all recorded runs."""
-    _save_history([])
-    return {"ok": True}
-
-
-@app.get("/api/history/{num}")
-def get_history(num: int) -> dict:
-    """Full record (room + steps + state) so a past run can be replayed."""
-    for r in _load_history():
-        if r["num"] == num:
-            return r
-    raise HTTPException(status_code=404, detail="History entry not found.")
-
-
-# --- sessions --------------------------------------------------------------
-
-@app.post("/api/session")
-def create_session(body: CreateSessionBody) -> dict:
-    session_id = uuid.uuid4().hex[:12]
-    SESSIONS[session_id] = {
-        "state": game.GameState(body.room),
-        "api_key": body.api_key,
-        "model": body.model,
-        "move_limit": max(1, body.move_limit),
-        "provider": body.provider,
-    }
-    return {
-        "session_id": session_id,
-        "state": SESSIONS[session_id]["state"].snapshot(),
-    }
-
-
-@app.get("/api/session/{session_id}/state")
-def get_state(session_id: str) -> dict:
-    session = _get_session(session_id)
-    return session["state"].snapshot()
-
-
-@app.delete("/api/session/{session_id}")
-def delete_session(session_id: str) -> dict:
-    SESSIONS.pop(session_id, None)
-    return {"ok": True}
-
-
-# --- the agentic loop (SSE) ------------------------------------------------
-
-@app.get("/api/session/{session_id}/run")
-def run_session(session_id: str):
-    session = _get_session(session_id)
+@app.post("/api/run")
+def run(body: RunBody):
+    """Run the agentic loop over the supplied room, streaming one event per step."""
+    state = game.GameState(body.room)
+    move_limit = min(MAX_MOVE_LIMIT, max(1, body.move_limit))
+    model = body.model if body.model in ALLOWED_MODELS else DEFAULT_MODEL
+    provider = FORCED_PROVIDER or body.provider
 
     def event_stream():
-        for event in run_agent(
-            session["state"],
-            api_key=session["api_key"],
-            model=session["model"],
-            move_limit=session["move_limit"],
-            provider=session.get("provider", "auto"),
-        ):
-            yield f"data: {json.dumps(event)}\n\n"
+        yield _frame({"type": "state", "state": state.snapshot()})
+        try:
+            for event in run_agent(state, model=model, move_limit=move_limit, provider=provider):
+                yield _frame(event)
+        except Exception as exc:  # noqa: BLE001 — a mid-stream failure must reach the UI
+            yield _frame({"type": "error", "text": f"The run failed: {exc}"})
         yield "event: end\ndata: {}\n\n"
 
     return StreamingResponse(
@@ -297,31 +132,45 @@ def run_session(session_id: str):
     )
 
 
-# --- action APIs (each tool, callable directly) ----------------------------
-
-@app.post("/api/session/{session_id}/actions/look_around")
-def action_look_around(session_id: str) -> dict:
-    session = _get_session(session_id)
-    text = session["state"].look_around()
-    return {"result": text, "state": session["state"].snapshot()}
+def _history_writable() -> bool:
+    return os.access(os.path.dirname(HISTORY_FILE), os.W_OK)
 
 
-@app.post("/api/session/{session_id}/actions/investigate_item")
-def action_investigate(session_id: str, body: InvestigateBody) -> dict:
-    session = _get_session(session_id)
-    text = session["state"].investigate_item(body.item_name)
-    return {"result": text, "state": session["state"].snapshot()}
+def _without_llm_payloads(steps: list) -> list:
+    """Drop the raw request/response dumps; they are ~3KB a step and bloat the archive."""
+    return [
+        {k: v for k, v in step.items() if k not in ("llmInput", "llmOutput")}
+        for step in steps
+        if isinstance(step, dict)
+    ]
 
 
-@app.post("/api/session/{session_id}/actions/use_item_on_target")
-def action_use_item(session_id: str, body: UseItemBody) -> dict:
-    session = _get_session(session_id)
-    text = session["state"].use_item_on_target(body.item_to_use, body.target_object)
-    return {"result": text, "state": session["state"].snapshot()}
+@app.post("/api/history")
+def archive_run(body: HistoryBody) -> dict:
+    """Append one finished run to escaping-history.json. A no-op on a read-only host."""
+    if not _history_writable():
+        return {"saved": False, "reason": "read-only filesystem"}
+    try:
+        with open(HISTORY_FILE) as f:
+            runs = json.load(f).get("runs", [])
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        runs = []
+    num = (runs[-1].get("num", 0) + 1) if runs else 1
+    runs.append({
+        "num": num,
+        "room_name": body.room_name,
+        "outcome": body.outcome,
+        "room": body.room,
+        "steps": _without_llm_payloads(body.steps),
+        "state": body.state,
+    })
+    try:
+        with open(HISTORY_FILE, "w") as f:
+            json.dump({"runs": runs}, f, indent=2)
+    except OSError as exc:
+        return {"saved": False, "reason": str(exc)}
+    return {"saved": True, "num": num}
 
 
-@app.post("/api/session/{session_id}/actions/escape")
-def action_escape(session_id: str) -> dict:
-    session = _get_session(session_id)
-    text = session["state"].escape()
-    return {"result": text, "state": session["state"].snapshot()}
+if os.path.isdir(_FRONTEND_DIST):
+    app.frontend("/", directory=_FRONTEND_DIST)

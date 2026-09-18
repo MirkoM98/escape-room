@@ -27,6 +27,7 @@ import os
 import re
 import shutil
 import subprocess
+import tempfile
 import time
 
 from anthropic import Anthropic, APIError, APIStatusError
@@ -37,8 +38,8 @@ _RETRYABLE = {429, 500, 502, 503, 529}
 # If the chosen model stays overloaded, fall back to these (in order).
 _FALLBACK_MODELS = ["claude-sonnet-4-6", "claude-haiku-4-5"]
 
-import game
-from skill import SYSTEM_PROMPT, TOOLS
+from . import game
+from .skill import SYSTEM_PROMPT, TOOLS
 
 _THINKING_RE = re.compile(r"<thinking>(.*?)</thinking>", re.DOTALL | re.IGNORECASE)
 
@@ -76,6 +77,18 @@ def _json_pretty(obj) -> str:
         return str(obj)
 
 
+def _done(reason: str, text: str, state: game.GameState) -> dict:
+    return {"type": "done", "reason": reason, "text": text, "state": state.snapshot()}
+
+
+def _out_of_moves(move_limit: int, state: game.GameState) -> dict:
+    return _done(
+        "out_of_moves",
+        f"OUT OF MOVES — the agent used all {move_limit} moves and did not escape.",
+        state,
+    )
+
+
 # ===========================================================================
 # Dispatcher — pick the provider, with auto-fallback from API to CLI.
 # ===========================================================================
@@ -103,7 +116,7 @@ def run_agent(
 
     # --- auto -------------------------------------------------------------
     if not key:
-        if _cli_available():
+        if cli_available():
             yield {"type": "status", "text": "No API key — using the local Claude CLI."}
             yield from _run_cli(state, model, move_limit)
             return
@@ -120,7 +133,7 @@ def run_agent(
     for ev in _run_api(state, key, model, move_limit):
         if ev.get("type") == "action":
             started_tools = True
-        if ev.get("type") == "error" and ev.get("auth_fail") and not started_tools and _cli_available():
+        if ev.get("type") == "error" and ev.get("auth_fail") and not started_tools and cli_available():
             auth_failed = True
             break
         yield ev
@@ -228,12 +241,11 @@ def _run_api(
 
         # No tool this turn -> the agent gave up / believes it cannot escape.
         if response.stop_reason != "tool_use" or not tool_uses:
-            yield {
-                "type": "done",
-                "reason": "cant_solve",
-                "text": narration.strip() or "I can't solve it: I ran out of ideas and stopped.",
-                "state": state.snapshot(),
-            }
+            yield _done(
+                "cant_solve",
+                narration.strip() or "I can't solve it: I ran out of ideas and stopped.",
+                state,
+            )
             return
 
         # Resolve every tool the model requested and return one tool_result each.
@@ -292,29 +304,14 @@ def _run_api(
         messages.append({"role": "user", "content": tool_results})
 
         if escaped_now:
-            yield {
-                "type": "done",
-                "reason": "escaped",
-                "text": last_result,
-                "state": state.snapshot(),
-            }
+            yield _done("escaped", last_result, state)
             return
 
         if out_of_moves:
-            yield {
-                "type": "done",
-                "reason": "out_of_moves",
-                "text": f"OUT OF MOVES — the agent used all {move_limit} moves and did not escape.",
-                "state": state.snapshot(),
-            }
+            yield _out_of_moves(move_limit, state)
             return
 
-    yield {
-        "type": "done",
-        "reason": "out_of_moves",
-        "text": f"OUT OF MOVES — the agent used all {move_limit} moves and did not escape.",
-        "state": state.snapshot(),
-    }
+    yield _out_of_moves(move_limit, state)
 
 
 # ===========================================================================
@@ -338,7 +335,7 @@ _CLI_OUTPUT_RULE = (
 )
 
 
-def _cli_available() -> bool:
+def cli_available() -> bool:
     return shutil.which("claude") is not None
 
 
@@ -397,7 +394,10 @@ def _build_cli_prompt(transcript: str, situation: str, move_no: int, move_limit:
 
 def _cli_decide(prompt: str, model: str):
     """Run one headless `claude -p` turn; return (decision_dict_or_None, raw_text)."""
-    cmd = ["claude", "-p", "--output-format", "json", "--allowed-tools", ""]
+    cmd = [
+        "claude", "-p", "--output-format", "json",
+        "--restricted", "--strict-mcp-config",
+    ]
     alias = _cli_model_arg(model)
     if alias:
         cmd += ["--model", alias]
@@ -407,7 +407,10 @@ def _cli_decide(prompt: str, model: str):
     # makes the `cli` provider hang/fail. Strip it (and any auth token) so the CLI
     # always falls back to your logged-in session.
     env = {k: v for k, v in os.environ.items() if k not in ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN")}
-    proc = subprocess.run(cmd, input=prompt, capture_output=True, text=True, timeout=180, env=env)
+    proc = subprocess.run(
+        cmd, input=prompt, capture_output=True, text=True, timeout=180,
+        env=env, cwd=tempfile.gettempdir(),
+    )
     if proc.returncode != 0:
         raise RuntimeError(proc.stderr.strip() or f"`claude` exited with code {proc.returncode}")
     try:
@@ -421,14 +424,14 @@ def _cli_decide(prompt: str, model: str):
 
 
 def _run_cli(state: game.GameState, model: str = "claude-sonnet-5", move_limit: int = 15):
-    if not _cli_available():
+    if not cli_available():
         yield {"type": "error", "text": "The `claude` CLI is not on PATH. Install Claude Code, or set ANTHROPIC_API_KEY."}
         return
 
     yield {"type": "status", "text": "running", "model": f"cli:{model}", "move_limit": move_limit}
 
     transcript = ""
-    situation = _kickoff(move_limit) + "\n\n" + state.context_footer()
+    situation = _kickoff(move_limit)
     moves_used = 0
     iteration = 0
     max_turns = move_limit + 5
@@ -451,12 +454,11 @@ def _run_cli(state: game.GameState, model: str = "claude-sonnet-5", move_limit: 
             return
 
         if decision is None:
-            yield {
-                "type": "done",
-                "reason": "cant_solve",
-                "text": (raw or "").strip() or "I can't solve it: the CLI returned no valid action.",
-                "state": state.snapshot(),
-            }
+            yield _done(
+                "cant_solve",
+                (raw or "").strip() or "I can't solve it: the CLI returned no valid action.",
+                state,
+            )
             return
 
         thinking = (decision.get("thinking") or "").strip()
@@ -471,12 +473,11 @@ def _run_cli(state: game.GameState, model: str = "claude-sonnet-5", move_limit: 
         # The agent decided the room is unsolvable.
         if tool == "give_up":
             reason = tool_input.get("reason") or thinking or "stuck"
-            yield {
-                "type": "done",
-                "reason": "cant_solve",
-                "text": reason if reason.lower().startswith("i can't solve") else f"I can't solve it: {reason}",
-                "state": state.snapshot(),
-            }
+            yield _done(
+                "cant_solve",
+                reason if reason.lower().startswith("i can't solve") else f"I can't solve it: {reason}",
+                state,
+            )
             return
 
         # Unknown tool -> don't spend a move; correct the model and loop again.
@@ -515,20 +516,10 @@ def _run_cli(state: game.GameState, model: str = "claude-sonnet-5", move_limit: 
         situation = result_text + "\n\n" + state.context_footer()
 
         if state.escaped:
-            yield {"type": "done", "reason": "escaped", "text": result_text, "state": state.snapshot()}
+            yield _done("escaped", result_text, state)
             return
         if moves_used >= move_limit:
-            yield {
-                "type": "done",
-                "reason": "out_of_moves",
-                "text": f"OUT OF MOVES — the agent used all {move_limit} moves and did not escape.",
-                "state": state.snapshot(),
-            }
+            yield _out_of_moves(move_limit, state)
             return
 
-    yield {
-        "type": "done",
-        "reason": "out_of_moves",
-        "text": f"OUT OF MOVES — the agent used all {move_limit} moves and did not escape.",
-        "state": state.snapshot(),
-    }
+    yield _out_of_moves(move_limit, state)

@@ -1,0 +1,9 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "backend/main.py": {
+      "maxDuration": 300,
+      "excludeFiles": "{backend/escaping-history.json,frontend/node_modules/**,**/__pycache__/**}"
+    }
+  }
+}

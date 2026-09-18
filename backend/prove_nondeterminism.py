@@ -9,10 +9,9 @@ Because the model SAMPLES its output from a probability distribution
 choices across runs. A deterministic / scripted solver cannot do this —
 it would print the same tool every single run.
 
-Run it:
+Run it from the repository root:
     export ANTHROPIC_API_KEY=sk-ant-...
-    cd backend
-    python prove_nondeterminism.py
+    python -m backend.prove_nondeterminism
 """
 
 import collections
@@ -20,8 +19,8 @@ import os
 
 from anthropic import Anthropic
 
-from agent import _kickoff
-from skill import SYSTEM_PROMPT, TOOLS
+from .agent import _kickoff
+from .skill import SYSTEM_PROMPT, TOOLS
 
 RUNS = 8
 MODEL = "claude-sonnet-5"
