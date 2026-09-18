@@ -19,6 +19,7 @@ export default function EscapeRoom() {
   const [moveLimit, setMoveLimit] = useState(() => Number(localStorage.getItem("er_move_limit")) || 15);
   const [provider, setProvider] = useState(() => localStorage.getItem("er_provider") || "auto");
   const [hasCli, setHasCli] = useState(false);
+  const [forcedProvider, setForcedProvider] = useState(null);
   const [maxMoveLimit, setMaxMoveLimit] = useState(40);
   // Resizable split: width of the LEFT column (percent); the right column flexes.
   const [leftWidth, setLeftWidth] = useState(() => Number(localStorage.getItem("er_left_w")) || 40);
@@ -123,7 +124,9 @@ export default function EscapeRoom() {
     getJson("/api/health")
       .then((h) => {
         setHasCli(!!h.has_cli);
-        if (!h.has_cli) setProvider((p) => (p === "cli" ? "auto" : p));
+        setForcedProvider(h.forced_provider || null);
+        if (h.forced_provider) setProvider(h.forced_provider);
+        else if (!h.has_cli) setProvider((p) => (p === "cli" ? "auto" : p));
         if (h.max_move_limit) {
           setMaxMoveLimit(h.max_move_limit);
           setMoveLimit((m) => Math.min(h.max_move_limit, Math.max(1, m)));
@@ -751,12 +754,19 @@ export default function EscapeRoom() {
             <label className="flex items-center gap-1.5 text-xs text-slate-400"
               title="How the backend reaches Claude: auto (API key, else CLI) · api (needs ANTHROPIC_API_KEY) · cli (local Claude Code login, no key)">
               <span>Claude via</span>
-              <select value={provider} onChange={(e) => setProvider(e.target.value)} disabled={isRunning}
-                className="bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-xs text-slate-200 disabled:opacity-50">
-                <option value="auto">auto (key → CLI)</option>
-                <option value="api">api (token)</option>
-                {hasCli && <option value="cli">cli (local login)</option>}
-              </select>
+              {forcedProvider ? (
+                <span className="px-2 py-1.5 rounded border border-slate-700 bg-slate-900/60 text-xs text-slate-300"
+                  title="Pinned by the server (ESCAPE_ROOM_PROVIDER). The deployment always uses the Anthropic API.">
+                  {forcedProvider}
+                </span>
+              ) : (
+                <select value={provider} onChange={(e) => setProvider(e.target.value)} disabled={isRunning}
+                  className="bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-xs text-slate-200 disabled:opacity-50">
+                  <option value="auto">auto (key → CLI)</option>
+                  <option value="api">api (token)</option>
+                  {hasCli && <option value="cli">cli (local only)</option>}
+                </select>
+              )}
               {provider === "cli" && <span className="text-[10px] text-amber-400" title="Each move spawns a fresh `claude -p` process">~7s/move</span>}
             </label>
             <div className="ml-auto flex items-center gap-4 text-xs">

@@ -91,6 +91,7 @@ def health() -> dict:
         "ok": True,
         "has_api_key": bool(os.environ.get("ANTHROPIC_API_KEY")),
         "has_cli": cli_available() and FORCED_PROVIDER not in ("api", "auto"),
+        "forced_provider": FORCED_PROVIDER or None,
         "tools": [t["name"] for t in TOOLS],
         "max_move_limit": MAX_MOVE_LIMIT,
         "models": list(ALLOWED_MODELS),
